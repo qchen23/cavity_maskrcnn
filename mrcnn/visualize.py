@@ -171,6 +171,7 @@ def display_instances(image, boxes, masks, class_ids, class_names,
     
     if display and auto_show:
         plt.show()
+    return fig, ax
         
 
 
