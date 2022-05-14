@@ -49,6 +49,7 @@ def detect(model_path = "bubble_mask_rcnn.h5", images_path = [], nm_pixels = [],
   frame_index = 1
   best_saveframe_address = ''
   best_info = None
+  total_bubble_set ={}
  
 
   for img, nm_pixel, fitting_type  in zip(images_path, nm_pixels, fitting_type):
@@ -64,7 +65,24 @@ def detect(model_path = "bubble_mask_rcnn.h5", images_path = [], nm_pixels = [],
       checkpoint_address = checkpoint_dir + '/{}-{}'.format(frame_index,item)
       saveframe_address = saveframe_address_dir + '/{}-{}'.format(frame_index,item)
       info = ExtractMask(img, nm_pixel, fitting_type, item)
-      detected_bubbles = info.extract_masks(model, False)
+      # bubble amount and mask of each config
+      detected_bubbles, per_mask = info.extract_masks(model, False)
+
+
+      pre_size = len(total_bubble_set)
+      for new_item in per_mask:
+        new_item = mask_array_to_position_set(new_item)
+        is_add = True
+        
+        for i in range(pre_size):
+          old_item = total_bubble_set[i]
+          # similarity ==False ==two bubbles, overlapping ==False
+          if similarity(new_item, old_item,0.7)==True or overlapping(new_item,old_item,0.7)==True:
+            is_add= False
+            break
+        if is_add:
+          total_bubble_set.add(new_item)
+
 
       # save info into checkpoint
       info.save_image(checkpoint_address + ".png")
@@ -81,8 +99,43 @@ def detect(model_path = "bubble_mask_rcnn.h5", images_path = [], nm_pixels = [],
     best_info.save_dataframe(best_address + ".csv")
     best_info.save_confusion_matrix(best_address + "-cm.txt")
 
+
+    print(len(total_bubble_set))
+
+    # Test save the final image
+
+
+    # fig, _ = mrcnn.visualize.display_instances(image=image, 
+    #                             masks=np.array(total_bubble_set), 
+    #                             title = 'number of detected bubbles:{}'.format(len(masks)),
+    #                             display = display)
+
     frame_index += 1
-      
+
+
+def mask_array_to_position_set(mask_array):
+  loc = np.where(mask_array == True)
+  s = [(r, c) for r, c in zip(loc[0], loc[1])]
+  return set(s)
+
+
+def similarity(set_1, set_2, IoU): 
+  union = len(set_1.union(set_2))
+  intersection = len(set_1.intersection(set_2))
+  sim = intersection / union
+  if sim < IoU: 
+    return False #Considered as two different bubbles
+  else:
+    return True #considered as a same bubble
+
+def overlapping(set_1,set_2,overlapping_th):
+  intersection = len(set_1.intersection(set_2))
+  if intersection/len(set_1) > overlapping_th or intersection/ len(set_2)> overlapping_th:
+    return True  # Do exist overlapping
+  else:
+    return False
+
+
 
 class ExtractMask:
   def __init__(self, images_path,nm_pixel,fitting_type,dim_value):
@@ -115,7 +168,7 @@ class ExtractMask:
     false_pos = 0
     true_neg = 1  # Consider the background as one mask
     false_neg = 0
-    threshold = 0.6
+    threshold = 0.6 #IoU
 
     for i in range(true_masks.shape[2]):
       loc = np.where(true_masks[:, :, i] == True)
@@ -228,7 +281,7 @@ class ExtractMask:
             
 
     self.df = frame
-    return len(frame)
+    return len(frame), masks
 
 
   def draw_ellipse(self, cnt,single_mask):
@@ -246,7 +299,7 @@ class ExtractMask:
     area_mask_fitting = np.pi * 0.25 * long_d * short_d
 
 
-    if area_mask_fitting / area_single_mask >= 1.2 or area_mask_fitting / area_single_mask <= 0.8:
+    if area_mask_fitting / area_single_mask >= 1.25 or area_mask_fitting / area_single_mask >= 1.25:
       return -1,-1,None
     else:
       single_mask_fitting = cv2.ellipse(single_mask*0.001, ellipse,(255,255,255),2) # draw the fitting+ mask
@@ -260,9 +313,9 @@ class ExtractMask:
     short_d = min(width, height)
 
     area_single_mask = len(np.where(single_mask == 255)[0])
-    area_mask_fitting = np.pi * 0.25 * long_d * short_d
+    area_mask_fitting =  long_d * short_d
 
-    if area_mask_fitting / area_single_mask >= 1.2 or area_mask_fitting / area_single_mask <= 0.8:
+    if area_mask_fitting / area_single_mask >= 1.25 or area_mask_fitting / area_single_mask >=1.25:
       return -1,-1,None
     else:
       box = cv2.boxPoints(rect)
@@ -321,8 +374,8 @@ class ExtractMask:
 # val_sets = [ "../bubble_dataset/images/" + f for f in filenames]
 
 filenames = os.listdir("../otest_set/")
-val_sets = [ "../otest_set/" + f for f in filenames]
-detect("../augmented_v5.h5", val_sets, [0.19] * len(val_sets), ['ellipse'] * len(val_sets), 'test_outputs_64_step/')
+val_sets = [ "../otest_set/" + f for f in filenames][:1]
+detect("../augmented_v5.h5", val_sets, [0.19] * len(val_sets), ['ellipse'] * len(val_sets), 'test_outputs_qq/')
 
 
 # model_address, [image_paths],[nm_pixel_lst]
