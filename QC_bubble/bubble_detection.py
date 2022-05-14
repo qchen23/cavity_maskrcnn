@@ -10,6 +10,7 @@ import cv2
 import numpy as np 
 import pandas as pd
 import matplotlib.pyplot as plt
+import random
 
 
 class SimpleConfig(mrcnn.config.Config):
@@ -19,7 +20,7 @@ class SimpleConfig(mrcnn.config.Config):
   IMAGES_PER_GPU = 1
   NUM_CLASSES = 2
 
-  DETECTION_MIN_CONFIDENCE = 0.5
+  DETECTION_MIN_CONFIDENCE = 0.6
   RPN_NMS_THRESHOLD = 0.7
   IMAGE_RESIZE_MODE = "square"
   IMAGE_CHANNEL_COUNT = 1
@@ -42,15 +43,17 @@ def detect(model_path = "bubble_mask_rcnn.h5", images_path = [], nm_pixels = [],
   model.load_weights(filepath=model_path,
                      by_name=True)
 
-  range_lst =[512,1024,1536,2048,2560,3072]
+  range_lst = [512,1024,1536,2048,2560,3072]
+  range_lst = np.arange(512, 3073, 64)
+
   frame_index = 1
   best_saveframe_address = ''
   best_info = None
  
 
   for img, nm_pixel, fitting_type  in zip(images_path, nm_pixels, fitting_type):
-    
-    num_bubbles = 0
+    print("Processing image ", img)
+    num_bubbles = -1
     best_address = ""
     checkpoint_dir = saveframe_address_dir + "/checkpoint-{}/".format(frame_index)
     if not os.path.exists(checkpoint_dir):
@@ -99,10 +102,12 @@ class ExtractMask:
 
   def confusion_maxtrix_by_jaccard_similarity(self, true_masks, pred_masks):
     pred_sets = []
-    for i in range(pred_masks.shape[2]):
-      loc = np.where(pred_masks[:, :, i] == True)
-      s = [(r, c) for r, c in zip(loc[0], loc[1])]
-      pred_sets.append(set(s))
+
+    if len(pred_masks.shape) >= 3:
+      for i in range(pred_masks.shape[2]):
+        loc = np.where(pred_masks[:, :, i] == True)
+        s = [(r, c) for r, c in zip(loc[0], loc[1])]
+        pred_sets.append(set(s))
 
 
     # confusion matirix. Once we have this, we can compute f1_score
@@ -182,7 +187,7 @@ class ExtractMask:
     grey = image[:, : , 0:1]
     false_pos = 0
     
-    model.config.MEAN_PIXEL = np.array([np.mean(grey)*0.9])
+    model.config.MEAN_PIXEL = np.array([np.mean(grey)*0.85])
     model.config.IMAGE_MIN_DIM = self.min_dim
     model.config.IMAGE_MAX_DIM = self.max_dim
   
@@ -307,8 +312,21 @@ class ExtractMask:
     
 
 
+
+# filenames = sorted(os.listdir("../bubble_dataset/images"))
+# random.seed(23423)
+# random.shuffle(filenames)
+# filenames = filenames[int(0.8 * len(filenames)) : ]
+
+# val_sets = [ "../bubble_dataset/images/" + f for f in filenames]
+
+filenames = os.listdir("../otest_set/")
+val_sets = [ "../otest_set/" + f for f in filenames]
+detect("../augmented_v5.h5", val_sets, [0.19] * len(val_sets), ['ellipse'] * len(val_sets), 'test_outputs_64_step/')
+
+
 # model_address, [image_paths],[nm_pixel_lst]
-detect("512_chao_test1.h5", ["bubble_dataset/images/00017.png"], [0.19], ['ellipse'], 'outputs/results/')
+# detect("512_chao_test1.h5", ["bubble_dataset/images/00017.png"], [0.19], ['ellipse'], 'outputs/results/')
 
 
 
