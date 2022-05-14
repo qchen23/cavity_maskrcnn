@@ -25,7 +25,7 @@ def post_process_mask(event, x, y, flags, param):
 
 
 if len(sys.argv) != 2:
-  print("usage: python checkpoint_dir")
+  print("usage: python QC_bubble/post_processing.py checkpoint_dir")
   sys.exit()
 
 # read from command line arguments
