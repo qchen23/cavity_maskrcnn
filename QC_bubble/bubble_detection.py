@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import random
+from utils import *
 
 
 class SimpleConfig(mrcnn.config.Config):
@@ -31,10 +32,16 @@ class SimpleConfig(mrcnn.config.Config):
   IMAGE_MIN_DIM = 512
   IMAGE_MAX_DIM = 512
 
+  
 
-  
-  # RPN_ANCHOR_SCALES = (8, 16, 32, 64, 128)
-  
+def save_fig(fig, filepath):
+  fig.savefig(filepath,dpi='figure',format=None, metadata=None,bbox_inches=None, 
+                    pad_inches=0.1, facecolor='auto', edgecolor='auto', backend=None)
+
+def save_confusion_matrix(filepath, confusion_matrix):
+  (true_pos, true_neg, false_pos, false_neg, precision, recall, f1_score) = confusion_matrix
+  with open(filepath, "w") as f:
+    f.write("TP = {}, TN = {}, FP = {}, FN = {}, precision = {}, recall = {}, f1_score = {}\n".format(true_pos, true_neg, false_pos, false_neg, precision, recall, f1_score))
 
 
 def detect(model_path = "bubble_mask_rcnn.h5", images_path = [], nm_pixels = [],fitting_type=[],saveframe_address_dir='outputs/'):
@@ -51,21 +58,15 @@ def detect(model_path = "bubble_mask_rcnn.h5", images_path = [], nm_pixels = [],
   # range_lst = np.arange(512, 3073, 512)
   # range_lst = [512,1024]
 
-  frame_index = 1
-  best_saveframe_address = ''
-  best_info = None
-  
- 
-
-  for img, nm_pixel, fitting_type  in zip(images_path, nm_pixels, fitting_type):
+  frame_index = 1 
+  for img_name, nm_pixel, fitting_type  in zip(images_path, nm_pixels, fitting_type):
     
-    image = cv2.imread(img)
+    print("Processing image ", img_name)
+    image = cv2.imread(img_name)
     total_bubble_set =[]
-    total_roi,total_class_ids, total_scores,total_mask=[],[],[],[]
+    total_roi, total_class_ids, total_scores, total_mask= [],[],[],[]
 
-    print("Processing image ", img)
-    num_bubbles = -1
-    best_address = ""
+    # create checkpoint directory 
     checkpoint_dir = saveframe_address_dir + "/checkpoint-{}/".format(frame_index)
     if not os.path.exists(checkpoint_dir):
       os.mkdir(checkpoint_dir)
@@ -78,24 +79,19 @@ def detect(model_path = "bubble_mask_rcnn.h5", images_path = [], nm_pixels = [],
 
     for item in img_size_lst:
 
-      checkpoint_address = checkpoint_dir + '/{}-{}'.format(frame_index,item)
-      saveframe_address = saveframe_address_dir + '/{}-{}'.format(frame_index,item)
-      info = ExtractMask(img, nm_pixel, fitting_type, item)
-      # bubble amount and mask of each config
 
-     
-      detected_bubbles, rois,per_mask,class_ids,scores = info.extract_masks(model, False)
-
+      info = ExtractMask(img_name, fitting_type, item)     
+      rois, masks, class_ids, scores = info.extract_masks(model)
 
       pre_size = len(total_bubble_set)
-      for i in range(per_mask.shape[2]):
-        new_item = mask_array_to_position_set(per_mask[:,:,i])
+      for i in range(masks.shape[2]):
+        new_item = mask_array_to_position_set(masks[:,:,i])
         is_add = True
         
         for j in range(pre_size):
           old_item = total_bubble_set[j]
           # similarity ==False ==two bubbles, overlapping ==False
-          if similarity(new_item, old_item,0.7)==True or overlapping(new_item,old_item,0.7)==True:
+          if similarity(new_item, old_item,0.7) == True or overlapping(new_item,old_item,0.7) == True:
             is_add= False
             break
         if is_add:
@@ -103,41 +99,14 @@ def detect(model_path = "bubble_mask_rcnn.h5", images_path = [], nm_pixels = [],
           total_roi.append(rois[i])
           total_class_ids.append(class_ids[i])
           total_scores.append(scores[i])
-          total_mask.append(per_mask[:,:,i])
-
-
-      # save info into checkpoint
-    #   info.save_image(checkpoint_address + ".png")
-    #   info.save_dataframe(checkpoint_address + ".csv")
-    #   info.save_confusion_matrix(checkpoint_address + "-cm.txt")
-
-    #   if num_bubbles < detected_bubbles: #just save the good dataframe
-    #     best_info = info
-    #     num_bubbles = detected_bubbles
-    #     best_address = saveframe_address
+          total_mask.append(masks[:,:,i])
     
-    # # save the best info
-    # best_info.save_image(best_address + ".png")
-    # best_info.save_dataframe(best_address + ".csv")
-    # best_info.save_confusion_matrix(best_address + "-cm.txt")
-
-
-    print(len(total_bubble_set))
-
-    # Test save the final image
-    
-    # print('img.sahpe', image.shape)
-    
-
 
     total_mask= np.moveaxis(np.array(total_mask),0,-1)
     total_roi = np.array(total_roi)
     total_class_ids = np.array(total_class_ids)
     total_scores = np.array(total_scores)
 
-    # print('m',total_mask.shape)
-    # print('b',total_roi.shape)
-    # print('c',total_class_ids.shape)
     
     fig, _ = mrcnn.visualize.display_instances(image=image, 
                                 boxes=total_roi, 
@@ -148,159 +117,45 @@ def detect(model_path = "bubble_mask_rcnn.h5", images_path = [], nm_pixels = [],
                                 title = 'number of detected bubbles:{}'.format(len(total_roi)),
                                 display = False)
                               
-    filepath= saveframe_address_dir + '/total-{}'.format(frame_index)
-    fig.savefig(filepath+'.png',dpi='figure',format=None, metadata=None,bbox_inches=None, 
-                    pad_inches=0.1, facecolor='auto', edgecolor='auto', backend=None)
     
-    
-    total_mask_position= []
-    for i in range(total_mask.shape[2]):
-        total_mask_position.append(np.where(total_mask[:,:,i]))
-    
-    np.save(filepath,np.array(total_mask_position,dtype=object))
+    # we save the final figure, mask, and stat
+    save_fig(fig, checkpoint_dir  + "/mask_image.png")
+    np.save(checkpoint_dir  + "/masks.npy", total_mask)
+    cv2.imwrite(checkpoint_dir + "/original_image.png", image)
 
+    annot = (img_name[:-4] + ".npy").replace("images", "annots")
+
+    if os.path.exists(annot):
+      print(total_mask.shape)
+      true_masks = np.load(annot)
+      cm = confusion_maxtrix_by_jaccard_similarity(true_masks, total_mask)
+      save_confusion_matrix(checkpoint_dir + "/cm.txt", cm)
+    
+    output_stat(checkpoint_dir + "/cnn_stat.csv", image, total_mask)
     frame_index += 1
 
 
 
-def mask_array_to_position_set(mask_array):
-  # print(mask_array.shape)
-  loc = np.where(mask_array == True)
-  s = [(r, c) for r, c in zip(loc[0], loc[1])]
-  # print(s)
-  return set(s)
-
-
-def similarity(set_1, set_2, IoU):
-  # print(set_1)
-  # print(set_2)
-  union = len(set_1.union(set_2))
-  intersection = len(set_1.intersection(set_2))
-  sim = intersection / union
-  if sim < IoU: 
-    return False #Considered as two different bubbles
-  else:
-    return True #considered as a same bubble
-
-def overlapping(set_1,set_2,overlapping_th):
-  intersection = len(set_1.intersection(set_2))
-  if intersection/len(set_1) > overlapping_th or intersection/ len(set_2)> overlapping_th:
-    return True  # Do exist overlapping
-  else:
-    return False
-
-
-
 class ExtractMask:
-  def __init__(self, images_path,nm_pixel,fitting_type,dim_value):
+  def __init__(self, images_path, cv2_draw_type, dim_value):
     self.images_path = images_path
-    self.nm_pixel = nm_pixel
-    self.long_d_p = []
-    self.short_d_p = []
-    self.img_mask = []
-    self.size = np.array([])
-    self.type = fitting_type
-    self.max_dim = dim_value
-    self.min_dim = dim_value
-    self.df = None
-    self.fig = None
-    self.cm_info = None
-    
-
-  def confusion_maxtrix_by_jaccard_similarity(self, true_masks, pred_masks):
-    pred_sets = []
-
-    if len(pred_masks.shape) >= 3:
-      for i in range(pred_masks.shape[2]):
-        loc = np.where(pred_masks[:, :, i] == True)
-        s = [(r, c) for r, c in zip(loc[0], loc[1])]
-        pred_sets.append(set(s))
+    self.dim_value = dim_value
+    self.cv2_draw_type = cv2_draw_type
 
 
-    # confusion matirix. Once we have this, we can compute f1_score
-    true_pos = 0
-    false_pos = 0
-    true_neg = 1  # Consider the background as one mask
-    false_neg = 0
-    threshold = 0.6 #IoU
-
-    for i in range(true_masks.shape[2]):
-      loc = np.where(true_masks[:, :, i] == True)
-      mask_set = set([(r, c) for r, c in zip(loc[0], loc[1])])
-
-      max_sim = 0
-      # best_mask = -1
-      pred_set = set()
-
-      for counter, s in enumerate(pred_sets):
-
-        union = len(mask_set.union(s))
-        intersection = len(mask_set.intersection(s))
-        sim = intersection / union
-
-        if (sim > max_sim):
-          max_sim = sim
-          pred_set = s
-
-      if max_sim >= threshold:
-        pred_sets.remove(pred_set)
-        true_pos += 1  # in true and pred mask
-      else:
-        false_neg += 1 # in true mask but not in pred mask
-
-
-    false_pos = len(pred_sets) # in pred mask but not in true mask
-
-    if true_pos + false_pos == 0:
-      precision = 0
-    else:
-      precision = true_pos / (true_pos + false_pos)
-    
-    if true_pos + false_neg == 0:
-      recall = 0
-    else:
-      recall = true_pos / (true_pos + false_neg)
-
-    if precision + recall == 0:
-      f1_score = 0
-    else:
-      f1_score =  2 * (precision * recall) / (precision + recall)
-
-   
-
-    return (true_pos, true_neg, false_pos, false_neg, precision, recall, f1_score)
-
-  def save_dataframe(self, filepath):
-    self.df.to_csv(filepath, index= False)
-  
-  def save_image(self, filepath):
-    self.fig.savefig(filepath,dpi='figure',format=None, metadata=None,bbox_inches=None, 
-                    pad_inches=0.1, facecolor='auto', edgecolor='auto', backend=None)
-
-
-  def save_confusion_matrix(self, filepath):
-
-    if self.cm_info == None: return
-    (true_pos, true_neg, false_pos, false_neg, precision, recall, f1_score) = self.cm_info
-    with open(filepath, "w") as f:
-      f.write("TP = {}, TN = {}, FP = {}, FN = {}, precision = {}, recall = {}, f1_score = {}\n".format(true_pos, true_neg, false_pos, false_neg, precision, recall, f1_score))
   
   # input an image path
   # return a frame of all masks in this image 
-  def extract_masks(self, model, display = False):
-
-    annot = (self.images_path[:-4] + ".npy").replace("images", "annots")
+  def extract_masks(self, model):
     image = cv2.imread(self.images_path)
     grey = image[:, : , 0:1]
     false_pos = 0
     
     model.config.MEAN_PIXEL = np.array([np.mean(grey)*0.85])
-    model.config.IMAGE_MIN_DIM = self.min_dim
-    model.config.IMAGE_MAX_DIM = self.max_dim
+    model.config.IMAGE_MIN_DIM = self.dim_value
+    model.config.IMAGE_MAX_DIM = self.dim_value
   
     r = model.detect(images=[grey],verbose=0)[0]
-    print(r["masks"].shape)
-
     rois, masks, class_ids, scores =[],[],[],[]
 
     # r['mask'] shape (image_width, image_height, mask_sequence)
@@ -311,110 +166,22 @@ class ExtractMask:
         class_ids.append(r['class_ids'][i])
         scores.append(r['scores'][i])
 
-    
-    dict_r= {'long d/pixel': self.long_d_p, 'short d/pixel':self.short_d_p,'long d/nm':np.array(self.long_d_p)*self.nm_pixel,'short d/nm': np.array(self.short_d_p)*self.nm_pixel}
-    frame = pd.DataFrame(dict_r)
-
     masks = np.moveaxis(np.array(masks),0,-1)
-    print(masks.shape, len(frame))
-
-    if os.path.exists(annot):
-      true_masks = np.load(annot)
-      self.cm_info = self.confusion_maxtrix_by_jaccard_similarity(true_masks, r["masks"])
-
-    CLASS_NAMES = ["BG", "bubble"]
-
-    self.fig, _ = mrcnn.visualize.display_instances(image=image, 
-                                    boxes=np.array(rois), 
-                                    masks=masks, 
-                                    class_ids=np.array(class_ids), 
-                                    class_names=CLASS_NAMES, 
-                                    scores=np.array(scores),
-                                    title = 'number of detected bubbles:{}'.format(len(frame)),
-                                    display = display)
-            
-
-    self.df = frame
-    return len(frame), rois,masks,class_ids,scores
 
 
-  def draw_ellipse(self, cnt,single_mask):
-    ellipse = cv2.fitEllipse(cnt)
-    # the return value is the rotated rectangle in which the ellipse is inscribed
-    # It recalls the cv2.minAreaRect(), which returns a Box2D structure
-    # containing (x,y) of the top-left corner, (width, height), angle of rotation
-    top_left_corner = ellipse[0] #(x,y)
-    width = ellipse[1][0]
-    height = ellipse[1][1]
-    long_d = max(width, height)
-    short_d = min(width, height)
-
-    area_single_mask =len(np.where(single_mask == 255)[0])
-    area_mask_fitting = np.pi * 0.25 * long_d * short_d
+    return rois, masks, class_ids, scores
 
 
-    if area_mask_fitting / area_single_mask >= 1.25 or area_mask_fitting / area_single_mask >= 1.25:
-      return -1,-1,None
-    else:
-      single_mask_fitting = cv2.ellipse(single_mask*0.001, ellipse,(255,255,255),2) # draw the fitting+ mask
-      return long_d, short_d, single_mask_fitting
-
-  def draw_rotated_rect(self, cnt, single_mask):
-    rect = cv2.minAreaRect(cnt)
-    width = rect[1][0]
-    height = rect[1][1]
-    long_d = max(width, height)
-    short_d = min(width, height)
-
-    area_single_mask = len(np.where(single_mask == 255)[0])
-    area_mask_fitting =  long_d * short_d
-
-    if area_mask_fitting / area_single_mask >= 1.25 or area_mask_fitting / area_single_mask >=1.25:
-      return -1,-1,None
-    else:
-      box = cv2.boxPoints(rect)
-      box = np.int0(box)
-      single_mask_fitting = cv2.drawContours(single_mask*0.001,[box],0,(255,255,255),2) # draw the fitting+ mask
-      return long_d, short_d, single_mask_fitting
-
-
-  def extract_single_mask(self, binary_mask, image): 
-    
-    # print(len(np.where(binary_mask == True)[0]))
-    # mask = image * binary_mask
-    # mask_init2 = mask[np.where(mask>0)]
-    # # nums,bins,patches = plt.hist(mask_init2,bins=10,edgecolor='k',density=False)  
-    # # th = bins[5]
-    # th = 60
-    # mask[np.where(mask<=th)]=0
-    # mask[np.where(mask>th)]=255
-    # binary_mask[np.where(mask<=th)] = False
-
-    mask = binary_mask * 255
-
-    contours,hierarchy = cv2.findContours(mask.astype(np.uint8), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    cnt = []
-    for c in contours:
-      if len(c) > len(cnt):
-        cnt = c 
-
+  def extract_single_mask(self, binary_mask, image, threshold = -1): 
+    cnt = get_cnt(image, binary_mask, threshold)
     if len(cnt) <= 10: return False
 
-    # find the mask area
-    area= cv2.contourArea(cnt)
-    # find the contour perimeter
-    perimeter = cv2.arcLength(cnt,True)
-    # draw_rotated_rect(cnt,mask)
-    if self.type =='ellipse':
-      long_d, short_d, mask_with_fitting = self.draw_ellipse(cnt, mask)
+    if self.cv2_draw_type =='ellipse':
+      long_d, short_d = draw_ellipse(cnt, binary_mask)
     else: 
-      long_d, short_d, mask_with_fitting = self.draw_rotated_rect(cnt, mask)
+      long_d, short_d = draw_rotated_rect(cnt, binary_mask)
 
-    if long_d > 0:
-      self.long_d_p.append(long_d)
-      self.short_d_p.append(short_d)
-      self.img_mask.append(mask_with_fitting)
-      return True
+    if long_d > 0: return True
     return False
     
 
@@ -429,6 +196,8 @@ class ExtractMask:
 
 filenames = os.listdir("../otest_set/")
 val_sets = [ "../otest_set/" + f for f in filenames][1:2]
+
+val_sets = ["../bubble_dataset/images/00328.png"]
 detect("../augmented_v6.h5", val_sets, [0.19]* len(val_sets) , ['ellipse'] * len(val_sets), 'test_outputs_qq4/')
 
 
