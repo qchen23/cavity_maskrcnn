@@ -64,10 +64,10 @@ if not os.path.isdir(checkpoint_dir):
 img = cv2.imread(checkpoint_dir + "/original_image.png")
 
 masks = np.load(checkpoint_dir + "/masks.npy", allow_pickle=True)
+binary_masks = loc_to_masks((img.shape[0], img.shape[1]), masks)
 # masks = loc_to_masks((img.shape[0], img.shape[1]), np.load(checkpoint_dir + "/masks.npy", allow_pickle=True))
 
 
-print(masks.shape, img.shape)
 rows, cols = img.shape[0], img.shape[1]
 colors = random_colors(masks.shape[0])
 original_image = np.copy(img)
@@ -90,6 +90,6 @@ while True:
     break
 
 # we save info here
-output_stat(checkpoint_dir + "/cnn_human_stat.csv", original_image, masks, removed_masks)
+output_stat(checkpoint_dir + "/cnn_human_stat.csv", original_image, binary_masks, removed_masks)
 cv2.imwrite(checkpoint_dir + "/cnn_human_maks_image.png", img)
 
