@@ -74,9 +74,9 @@ def detect(model_path = "bubble_mask_rcnn.h5", images_path = [], nm_pixels = [],
 
     img_size_lst = range_lst
     img_max_dim = max(image.shape[0], image.shape[1])
-    if img_max_dim >range_lst[-1]:
-      new_size = math.ceil(img_max_dim/64.0)*64
-      img_size_lst = [new_size + 512 * 2, new_size + 512 * 1, new_size, new_size - 512, new_size - 512 * 2]
+    new_size = math.ceil(img_max_dim/64.0)*64
+    if img_max_dim >range_lst[-1]: 
+      img_size_lst = [new_size, new_size + 512 * 2, new_size + 512 * 1, new_size - 512, new_size - 512 * 2]
     else:
       img_size_lst = [new_size] + img_size_lst
 

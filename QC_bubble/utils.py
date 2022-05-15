@@ -151,7 +151,9 @@ def output_stat(filepath, image, masks, removed_masks = set(), cv2_draw_type = "
     binary_mask = masks[:,:,i:i+1]
     # Be carful binary_mask has already changed
     cnt = get_cnt(image,binary_mask,threshold)
- 
+
+    if (len(cnt) <= 5) return
+
     if cv2_draw_type =='ellipse':
       long_p, short_p = draw_ellipse(cnt,binary_mask)
     else: 
