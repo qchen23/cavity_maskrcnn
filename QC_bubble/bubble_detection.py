@@ -75,15 +75,17 @@ def detect(model_path = "bubble_mask_rcnn.h5", images_path = [], nm_pixels = [],
     img_size_lst = range_lst
     img_max_dim = max(image.shape[0], image.shape[1])
     if img_max_dim >range_lst[-1]:
-      img_size_lst.append(math.ceil(img_max_dim/64.0)*64)
+      new_size = math.ceil(img_max_dim/64.0)*64
+      img_size_lst = [new_size + 512 * 2, new_size + 512 * 1, new_size, new_size - 512, new_size - 512 * 2]
 
     for item in img_size_lst:
-
-
       info = ExtractMask(img_name, fitting_type, item)     
       rois, masks, class_ids, scores = info.extract_masks(model)
 
       pre_size = len(total_bubble_set)
+
+      if len(rois) == 0: continue
+
       for i in range(masks.shape[2]):
         new_item = mask_array_to_position_set(masks[:,:,i])
         is_add = True
@@ -117,22 +119,27 @@ def detect(model_path = "bubble_mask_rcnn.h5", images_path = [], nm_pixels = [],
                                 title = 'number of detected bubbles:{}'.format(len(total_roi)),
                                 display = False)
                               
-    
+
     # we save the final figure, mask, and stat
-    save_fig(fig, checkpoint_dir  + "/mask_image.png")
-    np.save(checkpoint_dir  + "/masks.npy", total_mask)
     cv2.imwrite(checkpoint_dir + "/original_image.png", image)
 
     annot = (img_name[:-4] + ".npy").replace("images", "annots")
 
     if os.path.exists(annot):
-      print(total_mask.shape)
       true_masks = np.load(annot)
       cm = confusion_maxtrix_by_jaccard_similarity(true_masks, total_mask)
       save_confusion_matrix(checkpoint_dir + "/cm.txt", cm)
-    
-    output_stat(checkpoint_dir + "/cnn_stat.csv", image, total_mask)
+
+    if len(total_class_ids) != 0:
+      save_fig(fig, checkpoint_dir  + "/mask_image.png")
+
+      
+      np.save(checkpoint_dir  + "/masks.npy", masks_to_loc(total_mask))
+      
+      output_stat(checkpoint_dir + "/cnn_stat.csv", image, total_mask)
+
     frame_index += 1
+    
 
 
 
@@ -194,11 +201,13 @@ class ExtractMask:
 
 # val_sets = [ "../bubble_dataset/images/" + f for f in filenames]
 
-filenames = os.listdir("../otest_set/")
-val_sets = [ "../otest_set/" + f for f in filenames][1:2]
+data_dir = "./new_data/"
+filenames = os.listdir(data_dir)
+val_sets = [ data_dir + f for f in filenames]
 
-val_sets = ["../bubble_dataset/images/00328.png"]
-detect("../augmented_v6.h5", val_sets, [0.19]* len(val_sets) , ['ellipse'] * len(val_sets), 'test_outputs_qq4/')
+# val_sets = ["../bubble_dataset/images/00328.png"]
+val_sets = ["../bubble_dataset/images/00231.png"]
+detect("../augmented_v5.h5", val_sets, [0.19]* len(val_sets) , ['ellipse'] * len(val_sets), 'test/')
 
 
 # model_address, [image_paths],[nm_pixel_lst]

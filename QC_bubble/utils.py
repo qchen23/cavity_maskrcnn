@@ -20,7 +20,7 @@ def similarity(set_1, set_2, IoU):
 
 def overlapping(set_1,set_2,overlapping_th):
   intersection = len(set_1.intersection(set_2))
-  if intersection/len(set_1) > overlapping_th or intersection/ len(set_2) > overlapping_th:
+  if intersection/ len(set_1) > overlapping_th or intersection/ len(set_2) > overlapping_th:
     return True  # Do exist overlapping
   else:
     return False
@@ -166,4 +166,20 @@ def output_stat(filepath, image, masks, removed_masks = set(), cv2_draw_type = "
   frame = pd.DataFrame(dict_r)
   frame.to_csv(filepath, index= False)
 
-  
+
+def masks_to_loc(masks):
+  all_locs = []
+  for i in range(masks.shape[2]):
+    mask = masks[:, : ,i]
+    loc = np.where(mask)
+    all_locs.append(np.where(mask))
+
+  return np.array(all_locs, dtype=object)
+
+def loc_to_masks(shape, locs):
+  masks = np.full((shape[0], shape[1], len(locs)), False)
+
+  for i, loc in enumurate(locs):
+    for r, c in zip(loc[0], loc[1]):
+      masks[r, c, i] = True
+  return masks
