@@ -1,27 +1,51 @@
 import cv2
 import sys
 import numpy as np
-from mrcnn.visualize import apply_mask, random_colors
 from utils import *
 import os
+import colorsys
+import random
+
+
+def random_colors(N, bright=True):
+  """
+  Generate random colors.
+  To get visually distinct colors, generate them in HSV space then
+  convert to RGB.
+  """
+  brightness = 1.0 if bright else 0.7
+  hsv = [(i / N, 1, brightness) for i in range(N)]
+  colors = list(map(lambda c: colorsys.hsv_to_rgb(*c), hsv))
+  random.shuffle(colors)
+  return colors
 
 
 def unapply_mask(img, original_image, mask):
-  loc = np.where(mask == True)
-  for r, c in zip(loc[0], loc[1]):
-    img[r, c, :] = original_image[r, c, :]  
+  # loc = np.where(mask == True)
+  # for r, c in zip(loc[0], loc[1]):
+  #   img[r, c, :] = original_image[r, c, :] 
+  for i, j in zip(mask[0], mask[1]):
+    img[i, j, :] = original_image[i, j, :]
+
+def apply_mask(image, mask, color, alpha=0.5):
+
+  for i, j in zip(mask[0], mask[1]):
+    for c in range(3):
+      image[i, j, c] = image[i, j, c] * (1 - alpha) + alpha * color[c] * 255
+  return image
+
 
 def post_process_mask(event, x, y, flags, param):
 
   (original_image, img, masks, mask_ids, removed_masks, colors) = param
   if event == cv2.EVENT_LBUTTONDOWN:
-    for mask_id in mask_ids[x][y]:
+    for mask_id in mask_ids[y][x]:
       if mask_id in removed_masks:
-        apply_mask(img, masks[:, :, mask_id], colors[mask_id], 0.4)
+        apply_mask(img, masks[mask_id], colors[mask_id], 0.4)
         removed_masks.remove(mask_id)
       else:
         removed_masks.add(mask_id)
-        unapply_mask(img, original_image, masks[:, :, mask_id])
+        unapply_mask(img, original_image, masks[mask_id])
 
 
 if len(sys.argv) != 2:
@@ -38,20 +62,22 @@ if not os.path.isdir(checkpoint_dir):
 
 # read image and masks
 img = cv2.imread(checkpoint_dir + "/original_image.png")
-masks = loc_to_masks((img.shape[0], img.shape[1]), np.load(checkpoint_dir + "/masks.npy", allow_pickle=True))
+
+masks = np.load(checkpoint_dir + "/masks.npy", allow_pickle=True)
+# masks = loc_to_masks((img.shape[0], img.shape[1]), np.load(checkpoint_dir + "/masks.npy", allow_pickle=True))
 
 
-rows, cols = masks.shape[0], masks.shape[1]
-colors = random_colors(masks.shape[2])
+print(masks.shape, img.shape)
+rows, cols = img.shape[0], img.shape[1]
+colors = random_colors(masks.shape[0])
 original_image = np.copy(img)
 
 # mask_ids[i][j] contains a set of ids at location i,j
 mask_ids = np.array([set() for _ in range(rows * cols)]).reshape(rows, cols)     
-for i in range(masks.shape[2]):  
-  apply_mask(img, masks[:, :, i], colors[i], 0.5)
-  loc = np.where(masks[:, :, i] == True)
-  for r, c in zip(loc[0], loc[1]):
-    mask_ids[c][r].add(i)
+for i, mask in enumerate(masks):
+  apply_mask(img, mask, colors[i], 0.5)
+  for r, c in zip(mask[0], mask[1]):
+    mask_ids[r,c].add(i)
 
 
 removed_masks = set()
