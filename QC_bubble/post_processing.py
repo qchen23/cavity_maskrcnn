@@ -38,7 +38,7 @@ if not os.path.isdir(checkpoint_dir):
 
 # read image and masks
 img = cv2.imread(checkpoint_dir + "/original_image.png")
-masks = np.load(checkpoint_dir + "/masks.npy")
+masks = loc_to_masks((img.shape[0], img.shape[1]), np.load(checkpoint_dir + "/masks.npy", allow_pickle=True))
 
 
 rows, cols = masks.shape[0], masks.shape[1]

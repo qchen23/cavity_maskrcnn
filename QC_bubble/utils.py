@@ -179,7 +179,7 @@ def masks_to_loc(masks):
 def loc_to_masks(shape, locs):
   masks = np.full((shape[0], shape[1], len(locs)), False)
 
-  for i, loc in enumurate(locs):
+  for i, loc in enumerate(locs):
     for r, c in zip(loc[0], loc[1]):
       masks[r, c, i] = True
   return masks
