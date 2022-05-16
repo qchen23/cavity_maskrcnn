@@ -51,7 +51,7 @@ def overlapping(set_1,set_2,overlapping_th):
   else:
     return False
 
-def confusion_maxtrix_by_jaccard_similarity(true_masks, pred_masks):
+def confusion_maxtrix_by_jaccard_similarity(true_masks, pred_masks, verbose = 0):
   pred_sets = []
 
   if len(pred_masks.shape) >= 3:
@@ -80,6 +80,8 @@ def confusion_maxtrix_by_jaccard_similarity(true_masks, pred_masks):
       if (sim > max_sim):
         max_sim = sim
         pred_set = s
+
+    if verbose > 0: print("sim: {}".format(max_sim)) 
 
     if max_sim >= threshold:
       pred_sets.remove(pred_set)
