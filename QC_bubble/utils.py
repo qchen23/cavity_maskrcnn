@@ -1,6 +1,32 @@
 import numpy as np
 import pandas as pd
 import cv2
+import colorsys
+import random
+
+
+def my_apply_mask(image, mask, color, threshold, alpha=0.5):
+
+  for i, j in zip(mask[0], mask[1]):
+    if threshold > 0 and image[i, j, 0] <= threshold: continue
+    for c in range(3):
+      image[i, j, c] = image[i, j, c] * (1 - alpha) + alpha * color[c] * 255
+  return image
+
+
+
+def my_random_colors(N, bright=True):
+  """
+  Generate random colors.
+  To get visually distinct colors, generate them in HSV space then
+  convert to RGB.
+  """
+  brightness = 1.0 if bright else 0.7
+  hsv = [(i / N, 1, brightness) for i in range(N)]
+  colors = list(map(lambda c: colorsys.hsv_to_rgb(*c), hsv))
+  random.shuffle(colors)
+  return colors
+
 
 def mask_array_to_position_set(mask_array):
   loc = np.where(mask_array == True)
@@ -81,11 +107,11 @@ def get_cnt(image, binary_mask, threshold = -1):
   # turn any pixel whose value > threshold to white pixel
   # turn any pixel whose value <= threshold to black pixel
   if threshold > 0:
-    mask = image[:, :, 0:1] * binary_mask
+    mask = image * binary_mask
     mask_init2 = mask[np.where(mask>0)]
     mask[np.where(mask <= threshold)] = 0 
     mask[np.where(mask > threshold)] = 255
-    binary_mask[np.where(mask<=threshold)] = False
+    binary_mask[np.where(mask<=th)] = False
 
   # get cnt
   mask = binary_mask * 255
@@ -151,11 +177,9 @@ def output_stat(filepath, image, masks, removed_masks = set(), cv2_draw_type = "
     binary_mask = masks[:,:,i:i+1]
     # Be carful binary_mask has already changed
     cnt = get_cnt(image,binary_mask,threshold)
-
-    if (len(cnt) <= 5): continue
-
+ 
     if cv2_draw_type =='ellipse':
-      long_p, short_p = draw_ellipse(cnt,binary_mask)
+      long_p, short_p = draw_ellipse(cnt, binary_mask)
     else: 
       long_p, short_p = draw_rotated_rect(cnt, binary_mask)
 
