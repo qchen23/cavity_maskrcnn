@@ -109,7 +109,7 @@ def get_cnt(image, binary_mask, threshold = -1):
   # turn any pixel whose value > threshold to white pixel
   # turn any pixel whose value <= threshold to black pixel
   if threshold > 0:
-    mask = image * binary_mask
+    mask = image[:, :, 0] * binary_mask
     mask_init2 = mask[np.where(mask>0)]
     mask[np.where(mask <= threshold)] = 0 
     mask[np.where(mask > threshold)] = 255
