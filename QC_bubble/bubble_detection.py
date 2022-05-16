@@ -134,12 +134,10 @@ def detect(model_path = "bubble_mask_rcnn.h5", images_path = [], nm_pixels = [],
 
     if len(total_class_ids) != 0:
       save_fig(fig, checkpoint_dir  + "/mask_image.png")
-
-      
       np.save(checkpoint_dir  + "/masks.npy", masks_to_loc(total_mask))
-      
       output_stat(checkpoint_dir + "/cnn_stat.csv", image, total_mask)
 
+    plt.close("all")
     frame_index += 1
     
 
@@ -196,20 +194,20 @@ class ExtractMask:
 
 
 
-# filenames = sorted(os.listdir("../bubble_dataset/images"))
-# random.seed(23423)
-# random.shuffle(filenames)
-# filenames = filenames[int(0.8 * len(filenames)) : ]
+filenames = sorted(os.listdir("../bubble_dataset/images"))
+random.seed(23423)
+random.shuffle(filenames)
+filenames = filenames[int(0.8 * len(filenames)) : ]
 
-# val_sets = [ "../bubble_dataset/images/" + f for f in filenames]
+val_sets = [ "../bubble_dataset/images/" + f for f in filenames]
 
-data_dir = "./new_data/"
-filenames = os.listdir(data_dir)
-val_sets = [ data_dir + f for f in filenames]
+# data_dir = "./new_data/"
+# filenames = os.listdir(data_dir)
+# val_sets = [ data_dir + f for f in filenames]
 
-# val_sets = ["../bubble_dataset/images/00328.png"]
-val_sets = ["../bubble_dataset/images/00231.png"]
-detect("../augmented_v5.h5", val_sets, [0.19]* len(val_sets) , ['ellipse'] * len(val_sets), 'test/')
+# # val_sets = ["../bubble_dataset/images/00328.png"]
+# val_sets = ["../bubble_dataset/images/00231.png"]
+detect("../augmented_v5.h5", val_sets, [0.19]* len(val_sets) , ['ellipse'] * len(val_sets), 'val_set5/')
 
 
 # model_address, [image_paths],[nm_pixel_lst]
