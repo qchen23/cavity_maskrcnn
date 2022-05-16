@@ -194,20 +194,20 @@ class ExtractMask:
 
 
 
-filenames = sorted(os.listdir("../bubble_dataset/images"))
-random.seed(23423)
-random.shuffle(filenames)
-filenames = filenames[int(0.8 * len(filenames)) : ]
+# filenames = sorted(os.listdir("../bubble_dataset/images"))
+# random.seed(23423)
+# random.shuffle(filenames)
+# filenames = filenames[int(0.8 * len(filenames)) : ]
 
-val_sets = [ "../bubble_dataset/images/" + f for f in filenames]
+# val_sets = [ "../bubble_dataset/images/" + f for f in filenames]
 
-# data_dir = "./new_data/"
-# filenames = os.listdir(data_dir)
-# val_sets = [ data_dir + f for f in filenames]
+data_dir = "../otest_set/"
+filenames = os.listdir(data_dir)
+val_sets = [ data_dir + f for f in filenames]
 
 # # val_sets = ["../bubble_dataset/images/00328.png"]
 # val_sets = ["../bubble_dataset/images/00231.png"]
-detect("../augmented_v5.h5", val_sets, [0.19]* len(val_sets) , ['ellipse'] * len(val_sets), 'val_set5/')
+detect("../augmented_v5.h5", val_sets, [0.19]* len(val_sets) , ['ellipse'] * len(val_sets), 'test_set/')
 
 
 # model_address, [image_paths],[nm_pixel_lst]

@@ -113,7 +113,7 @@ def get_cnt(image, binary_mask, threshold = -1):
     mask_init2 = mask[np.where(mask>0)]
     mask[np.where(mask <= threshold)] = 0 
     mask[np.where(mask > threshold)] = 255
-    binary_mask[np.where(mask<=th)] = False
+    binary_mask[np.where(mask<=threshold)] = False
 
   # get cnt
   mask = binary_mask * 255
