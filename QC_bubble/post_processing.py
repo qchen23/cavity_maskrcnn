@@ -13,21 +13,34 @@ def unapply_mask(img, original_image, mask):
   # for r, c in zip(loc[0], loc[1]):
   #   img[r, c, :] = original_image[r, c, :] 
   for i, j in zip(mask[0], mask[1]):
+
     img[i, j, :] = original_image[i, j, :]
+
+    
+
 
 
 
 def post_process_mask(event, x, y, flags, param):
 
   (original_image, img, masks, mask_ids, removed_masks, colors, threshold) = param
+  unmasked_sets = set()
   if event == cv2.EVENT_LBUTTONDOWN:
     for mask_id in mask_ids[y][x]:
       if mask_id in removed_masks:
-        my_apply_mask(img, masks[mask_id], colors[mask_id], threshold, 0.4)
         removed_masks.remove(mask_id)
       else:
         removed_masks.add(mask_id)
-        unapply_mask(img, original_image, masks[mask_id])
+
+      for i, j in zip(masks[mask_id][0], masks[mask_id][1]):
+        for mask_id in mask_ids[i][j]: unmasked_sets.add(mask_id)
+
+    for mask_id in unmasked_sets:
+      unapply_mask(img, original_image, masks[mask_id])
+
+    for mask_id in unmasked_sets:
+      if mask_id not in removed_masks:
+        my_apply_mask(img, masks[mask_id], colors[mask_id], threshold, 0.5)
 
 
 if len(sys.argv) != 3:
