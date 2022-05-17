@@ -5,6 +5,51 @@ import colorsys
 import random
 
 
+
+def dfs(r, c, mask, visited):
+
+  rows, cols = mask.shape[0], mask.shape[1]
+  stack = []
+  path = []
+
+  stack.append((r, c))
+  while len(stack) > 0:
+    (r, c) = stack.pop()
+    path.append((r, c))
+    visited[r][c] = True
+
+    # 4 locations to move
+    if r - 1 >= 0 and mask[r-1][c] and not visited[r-1][c]: stack.append((r-1,c))
+    if r + 1 < rows and mask[r+1][c] and not visited[r+1][c]: stack.append((r+1,c))
+    if c - 1 >= 0 and mask[r][c-1] and not visited[r][c-1]: stack.append((r,c-1))
+    if c + 1 < cols and mask[r][c+1] and not visited[r][c+1]: stack.append((r,c+1))
+  
+  return path
+def bubble_overlap(mask):
+  visited = np.full((mask.shape), False)
+  locs = np.where(mask)
+  rv = []
+  for r, c in zip(locs[0], locs[1]):
+    if not visited[r][c]:
+      path = dfs(r, c, mask, visited)
+      m = np.full((mask.shape), False)
+      for cell in path:
+        m[cell[0], cell[1]] = True
+      rv.append(m)
+  return rv
+
+
+def get_masks(masks):
+
+  total_masks = []
+  for i in range(masks.shape[2]):
+    total_masks = total_masks + bubble_overlap(masks[:, :, i])
+
+  total_masks = np.array(total_masks)
+  total_masks = np.moveaxis(np.array(total_masks),0,-1)
+
+  return total_masks
+
 def my_apply_mask(image, mask, color, threshold, alpha=0.5):
 
   for i, j in zip(mask[0], mask[1]):
