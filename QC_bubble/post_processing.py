@@ -3,21 +3,9 @@ import sys
 import numpy as np
 from utils import *
 import os
-import colorsys
 import random
 
 
-def random_colors(N, bright=True):
-  """
-  Generate random colors.
-  To get visually distinct colors, generate them in HSV space then
-  convert to RGB.
-  """
-  brightness = 1.0 if bright else 0.7
-  hsv = [(i / N, 1, brightness) for i in range(N)]
-  colors = list(map(lambda c: colorsys.hsv_to_rgb(*c), hsv))
-  random.shuffle(colors)
-  return colors
 
 
 def unapply_mask(img, original_image, mask):
@@ -25,28 +13,34 @@ def unapply_mask(img, original_image, mask):
   # for r, c in zip(loc[0], loc[1]):
   #   img[r, c, :] = original_image[r, c, :] 
   for i, j in zip(mask[0], mask[1]):
+
     img[i, j, :] = original_image[i, j, :]
 
-def apply_mask(image, mask, color, threshold, alpha=0.5):
+    
 
-  for i, j in zip(mask[0], mask[1]):
-    if threshold > 0 and image[i, j, 0] <= threshold: continue
-    for c in range(3):
-      image[i, j, c] = image[i, j, c] * (1 - alpha) + alpha * color[c] * 255
-  return image
+
 
 
 def post_process_mask(event, x, y, flags, param):
 
   (original_image, img, masks, mask_ids, removed_masks, colors, threshold) = param
+  unmasked_sets = set()
   if event == cv2.EVENT_LBUTTONDOWN:
     for mask_id in mask_ids[y][x]:
       if mask_id in removed_masks:
-        apply_mask(img, masks[mask_id], colors[mask_id], threshold, 0.4)
         removed_masks.remove(mask_id)
       else:
         removed_masks.add(mask_id)
-        unapply_mask(img, original_image, masks[mask_id])
+
+      for i, j in zip(masks[mask_id][0], masks[mask_id][1]):
+        for mask_id in mask_ids[i][j]: unmasked_sets.add(mask_id)
+
+    for mask_id in unmasked_sets:
+      unapply_mask(img, original_image, masks[mask_id])
+
+    for mask_id in unmasked_sets:
+      if mask_id not in removed_masks:
+        my_apply_mask(img, masks[mask_id], colors[mask_id], threshold, 0.5)
 
 
 if len(sys.argv) != 3:
@@ -71,13 +65,13 @@ binary_masks = loc_to_masks((img.shape[0], img.shape[1]), masks)
 
 
 rows, cols = img.shape[0], img.shape[1]
-colors = random_colors(masks.shape[0])
+colors = my_random_colors(masks.shape[0])
 original_image = np.copy(img)
 
 # mask_ids[i][j] contains a set of ids at location i,j
 mask_ids = np.array([set() for _ in range(rows * cols)]).reshape(rows, cols)     
 for i, mask in enumerate(masks):
-  apply_mask(img, mask, colors[i], threshold, 0.5)
+  my_apply_mask(img, mask, colors[i], threshold, 0.5)
   for r, c in zip(mask[0], mask[1]):
     mask_ids[r,c].add(i)
 

@@ -1,6 +1,77 @@
 import numpy as np
 import pandas as pd
 import cv2
+import colorsys
+import random
+
+
+
+def dfs(r, c, mask, visited):
+
+  rows, cols = mask.shape[0], mask.shape[1]
+  stack = []
+  path = []
+
+  stack.append((r, c))
+  while len(stack) > 0:
+    (r, c) = stack.pop()
+    path.append((r, c))
+    visited[r][c] = True
+
+    # 4 locations to move
+    if r - 1 >= 0 and mask[r-1][c] and not visited[r-1][c]: stack.append((r-1,c))
+    if r + 1 < rows and mask[r+1][c] and not visited[r+1][c]: stack.append((r+1,c))
+    if c - 1 >= 0 and mask[r][c-1] and not visited[r][c-1]: stack.append((r,c-1))
+    if c + 1 < cols and mask[r][c+1] and not visited[r][c+1]: stack.append((r,c+1))
+  
+  return path
+def bubble_overlap(mask):
+  visited = np.full((mask.shape), False)
+  locs = np.where(mask)
+  rv = []
+  for r, c in zip(locs[0], locs[1]):
+    if not visited[r][c]:
+      path = dfs(r, c, mask, visited)
+      m = np.full((mask.shape), False)
+      for cell in path:
+        m[cell[0], cell[1]] = True
+      rv.append(m)
+  return rv
+
+
+def get_masks(masks):
+
+  total_masks = []
+  for i in range(masks.shape[2]):
+    total_masks = total_masks + bubble_overlap(masks[:, :, i])
+
+  total_masks = np.array(total_masks)
+  total_masks = np.moveaxis(np.array(total_masks),0,-1)
+
+  return total_masks
+
+def my_apply_mask(image, mask, color, threshold, alpha=0.5):
+
+  for i, j in zip(mask[0], mask[1]):
+    if threshold > 0 and image[i, j, 0] <= threshold: continue
+    for c in range(3):
+      image[i, j, c] = image[i, j, c] * (1 - alpha) + alpha * color[c] * 255
+  return image
+
+
+
+def my_random_colors(N, bright=True):
+  """
+  Generate random colors.
+  To get visually distinct colors, generate them in HSV space then
+  convert to RGB.
+  """
+  brightness = 1.0 if bright else 0.7
+  hsv = [(i / N, 1, brightness) for i in range(N)]
+  colors = list(map(lambda c: colorsys.hsv_to_rgb(*c), hsv))
+  random.shuffle(colors)
+  return colors
+
 
 def mask_array_to_position_set(mask_array):
   loc = np.where(mask_array == True)
@@ -25,7 +96,7 @@ def overlapping(set_1,set_2,overlapping_th):
   else:
     return False
 
-def confusion_maxtrix_by_jaccard_similarity(true_masks, pred_masks):
+def confusion_maxtrix_by_jaccard_similarity(true_masks, pred_masks, verbose = 0):
   pred_sets = []
 
   if len(pred_masks.shape) >= 3:
@@ -55,6 +126,8 @@ def confusion_maxtrix_by_jaccard_similarity(true_masks, pred_masks):
         max_sim = sim
         pred_set = s
 
+    if verbose > 0: print("sim: {}".format(max_sim)) 
+
     if max_sim >= threshold:
       pred_sets.remove(pred_set)
       true_pos += 1  # in true and pred mask
@@ -81,7 +154,7 @@ def get_cnt(image, binary_mask, threshold = -1):
   # turn any pixel whose value > threshold to white pixel
   # turn any pixel whose value <= threshold to black pixel
   if threshold > 0:
-    mask = image[:, :, 0:1] * binary_mask
+    mask = image[:, :, 0] * binary_mask
     mask_init2 = mask[np.where(mask>0)]
     mask[np.where(mask <= threshold)] = 0 
     mask[np.where(mask > threshold)] = 255
@@ -151,11 +224,9 @@ def output_stat(filepath, image, masks, removed_masks = set(), cv2_draw_type = "
     binary_mask = masks[:,:,i:i+1]
     # Be carful binary_mask has already changed
     cnt = get_cnt(image,binary_mask,threshold)
-
-    if (len(cnt) <= 5): continue
-
+ 
     if cv2_draw_type =='ellipse':
-      long_p, short_p = draw_ellipse(cnt,binary_mask)
+      long_p, short_p = draw_ellipse(cnt, binary_mask)
     else: 
       long_p, short_p = draw_rotated_rect(cnt, binary_mask)
 

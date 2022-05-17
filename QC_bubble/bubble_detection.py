@@ -131,17 +131,16 @@ def detect(model_path = "bubble_mask_rcnn.h5", images_path = [],fitting_type=[],
 
     if os.path.exists(annot):
       true_masks = np.load(annot)
+      true_masks = get_masks(true_masks)
       cm = confusion_maxtrix_by_jaccard_similarity(true_masks, total_mask)
       save_confusion_matrix(checkpoint_dir + "/cm.txt", cm)
 
     if len(total_class_ids) != 0:
       save_fig(fig, checkpoint_dir  + "/mask_image.png")
-
-      
       np.save(checkpoint_dir  + "/masks.npy", masks_to_loc(total_mask))
-      
       output_stat(checkpoint_dir + "/cnn_stat.csv", image, total_mask)
 
+    plt.close("all")
     frame_index += 1
     
 
@@ -202,11 +201,22 @@ filenames = sorted(os.listdir("../bubble_dataset/images"))
 random.seed(23423)
 random.shuffle(filenames)
 filenames = filenames[int(0.8 * len(filenames)) : ]
+
 val_sets = [ "../bubble_dataset/images/" + f for f in filenames]
 
-# data_dir = "./new_data/"
+# data_dir = "../otest_set/"
 # filenames = os.listdir(data_dir)
 # val_sets = [ data_dir + f for f in filenames]
 
-# val_sets = ["../bubble_dataset/images/00328.png"]
-detect("../augmented_v5.h5", val_sets , ['ellipse'] * len(val_sets), 'val-set3/')
+# # val_sets = ["../bubble_dataset/images/00328.png"]
+# val_sets = ["../bubble_dataset/images/00251.png"]
+detect("../augmented_v5.h5", val_sets, [0.19]* len(val_sets) , ['ellipse'] * len(val_sets), 'test-set')
+
+
+# model_address, [image_paths],[nm_pixel_lst]
+# detect("512_chao_test1.h5", ["bubble_dataset/images/00017.png"], [0.19], ['ellipse'], 'outputs/results/')
+
+
+
+#["bubble_dataset/images/00328.png" ,"bubble_dataset/images/00005.png"]
+#,"bubble_dataset/images/00015.png","bubble_dataset/images/00329.png"
