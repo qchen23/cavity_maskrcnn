@@ -37,7 +37,7 @@ def confusion_maxtrix_by_jaccard_similarity(true_masks, pred_masks):
   false_pos = 0
   true_neg = 1  # Consider the background as one mask
   false_neg = 0
-  threshold = 0.6 #IoU
+  threshold = 0.7 #IoU
 
   for i in range(true_masks.shape[2]):
     mask_set = mask_array_to_position_set(true_masks[:, :, i])

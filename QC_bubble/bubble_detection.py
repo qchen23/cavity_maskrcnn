@@ -44,7 +44,7 @@ def save_confusion_matrix(filepath, confusion_matrix):
     f.write("TP = {}, TN = {}, FP = {}, FN = {}, precision = {}, recall = {}, f1_score = {}\n".format(true_pos, true_neg, false_pos, false_neg, precision, recall, f1_score))
 
 
-def detect(model_path = "bubble_mask_rcnn.h5", images_path = [], nm_pixels = [],fitting_type=[],saveframe_address_dir='outputs/'):
+def detect(model_path = "bubble_mask_rcnn.h5", images_path = [],fitting_type=[],saveframe_address_dir='outputs/'):
   CLASS_NAMES =['BG','bubble']
 
   model = mrcnn.model.MaskRCNN(mode="inference", 
@@ -59,7 +59,7 @@ def detect(model_path = "bubble_mask_rcnn.h5", images_path = [], nm_pixels = [],
   # range_lst = [512,1024]
 
   frame_index = 1 
-  for img_name, nm_pixel, fitting_type  in zip(images_path, nm_pixels, fitting_type):
+  for img_name,  fitting_type  in zip(images_path,  fitting_type):
     
     print("Processing image ", img_name)
     image = cv2.imread(img_name)
@@ -75,6 +75,8 @@ def detect(model_path = "bubble_mask_rcnn.h5", images_path = [], nm_pixels = [],
     img_size_lst = range_lst
     img_max_dim = max(image.shape[0], image.shape[1])
     new_size = math.ceil(img_max_dim/64.0)*64
+
+    # To various image size, we provide different re-scaling detection sequence
     if img_max_dim >range_lst[-1]: 
       img_size_lst = [new_size, new_size + 512 * 2, new_size + 512 * 1, new_size - 512, new_size - 512 * 2]
     else:
@@ -180,7 +182,7 @@ class ExtractMask:
 
     return rois, masks, class_ids, scores
 
-
+  # threshold can be applied to subtract the Fresnel fringes
   def extract_single_mask(self, binary_mask, image, threshold = -1): 
     cnt = get_cnt(image, binary_mask, threshold)
     if len(cnt) <= 10: return False
@@ -196,26 +198,15 @@ class ExtractMask:
 
 
 
-# filenames = sorted(os.listdir("../bubble_dataset/images"))
-# random.seed(23423)
-# random.shuffle(filenames)
-# filenames = filenames[int(0.8 * len(filenames)) : ]
+filenames = sorted(os.listdir("../bubble_dataset/images"))
+random.seed(23423)
+random.shuffle(filenames)
+filenames = filenames[int(0.8 * len(filenames)) : ]
+val_sets = [ "../bubble_dataset/images/" + f for f in filenames]
 
-# val_sets = [ "../bubble_dataset/images/" + f for f in filenames]
-
-data_dir = "./new_data/"
-filenames = os.listdir(data_dir)
-val_sets = [ data_dir + f for f in filenames]
+# data_dir = "./new_data/"
+# filenames = os.listdir(data_dir)
+# val_sets = [ data_dir + f for f in filenames]
 
 # val_sets = ["../bubble_dataset/images/00328.png"]
-val_sets = ["../bubble_dataset/images/00231.png"]
-detect("../augmented_v5.h5", val_sets, [0.19]* len(val_sets) , ['ellipse'] * len(val_sets), 'test/')
-
-
-# model_address, [image_paths],[nm_pixel_lst]
-# detect("512_chao_test1.h5", ["bubble_dataset/images/00017.png"], [0.19], ['ellipse'], 'outputs/results/')
-
-
-
-#["bubble_dataset/images/00328.png" ,"bubble_dataset/images/00005.png"]
-#,"bubble_dataset/images/00015.png","bubble_dataset/images/00329.png"
+detect("../augmented_v5.h5", val_sets , ['ellipse'] * len(val_sets), 'val-set3/')
