@@ -6,8 +6,6 @@ import os
 import random
 
 
-
-
 def unapply_mask(img, original_image, mask):
   # loc = np.where(mask == True)
   # for r, c in zip(loc[0], loc[1]):
@@ -15,11 +13,6 @@ def unapply_mask(img, original_image, mask):
   for i, j in zip(mask[0], mask[1]):
 
     img[i, j, :] = original_image[i, j, :]
-
-    
-
-
-
 
 def post_process_mask(event, x, y, flags, param):
 
