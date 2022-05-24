@@ -1,6 +1,7 @@
 
 ckp=$1
-cat `find $ckp -name "cm.txt"` > $ckp/all_cm.txt
+t=$2
+cat `find $ckp -name "cm-$2.txt"` > $ckp/all_cm.txt
 cat $ckp/all_cm.txt | \
 awk '{print $(NF-6), $(NF-3), $NF}' | \
 sed 's/,//g' | \
