@@ -4,7 +4,7 @@ import cv2
 import colorsys
 import random
 import os
-
+from mrcnn.utils import *
 
 
 def dfs(r, c, mask, visited):
@@ -97,7 +97,43 @@ def overlapping(set_1,set_2,overlapping_th):
   else:
     return False
 
-def confusion_maxtrix_by_jaccard_similarity(true_masks, pred_masks, verbose = 0):
+
+def confusion_maxtrix_bbx_by_jaccard_similarity(true_masks, pred_masks, threshold = 0.6, verbose = 0):
+  true_box = extract_boxes(true_masks)
+  pred_box = extract_boxes(pred_masks)
+
+  true_pos = 0
+  false_pos = 0
+  true_neg = 1  # Consider the background as one mask
+  false_neg = 0
+
+  for tb in true_box:
+
+    max_sim = 0
+    tb_area = (tb[2] - tb[0]) * (tb[3] - tb[1])
+    for pb in pred_box:
+      y1 = max(tb[0], pb[0])
+      y2 = min(tb[2], pb[2])
+      x1 = max(tb[1], pb[1])
+      x2 = min(tb[3], pb[3])
+      intersection = max(x2 - x1, 0) * max(y2 - y1, 0)
+      pb_area = (pb[2] - pb[0]) * (pb[3] - pb[1])
+      union = box_area + boxes_area - intersection
+      sim = intersection / union
+      if (sim > max_sim): max_sim = sim
+
+    if verbose > 0: print("sim: {}".format(max_sim)) 
+
+    
+    if max_sim >= threshold:
+      pred_sets.remove(pred_set)
+      true_pos += 1  # in true and pred mask
+    else:
+      false_neg += 1 # in true mask but not in pred mask
+
+  
+
+def confusion_maxtrix_by_jaccard_similarity(true_masks, pred_masks, threshold = 0.6, verbose = 0):
   pred_sets = []
 
   if len(pred_masks.shape) >= 3:
@@ -109,7 +145,6 @@ def confusion_maxtrix_by_jaccard_similarity(true_masks, pred_masks, verbose = 0)
   false_pos = 0
   true_neg = 1  # Consider the background as one mask
   false_neg = 0
-  threshold = 0.7 #IoU
 
   for i in range(true_masks.shape[2]):
     mask_set = mask_array_to_position_set(true_masks[:, :, i])
