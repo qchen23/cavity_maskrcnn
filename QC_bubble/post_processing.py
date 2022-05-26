@@ -50,7 +50,16 @@ if not os.path.isdir(checkpoint_dir):
   sys.exit()
 
 # read image and masks
-img = cv2.imread(checkpoint_dir + "/original_image.png")
+
+
+files = os.listdir(checkpoint_dir)
+oimg = ""
+for f in files:
+  if "original_image" in f:
+    oimg = f
+    break
+
+img = cv2.imread(checkpoint_dir + "/" + oimg)
 
 masks = np.load(checkpoint_dir + "/masks.npy", allow_pickle=True)
 binary_masks = loc_to_masks((img.shape[0], img.shape[1]), masks)
