@@ -99,38 +99,57 @@ def overlapping(set_1,set_2,overlapping_th):
 
 
 def confusion_maxtrix_bbx_by_jaccard_similarity(true_masks, pred_masks, threshold = 0.6, verbose = 0):
-  true_box = extract_boxes(true_masks)
-  pred_box = extract_boxes(pred_masks)
+  true_box = extract_bboxes(true_masks)
+  pred_box = extract_bboxes(pred_masks)
 
   true_pos = 0
   false_pos = 0
   true_neg = 1  # Consider the background as one mask
   false_neg = 0
 
+  used = [False] * pred_box.shape[0]
+
   for tb in true_box:
 
     max_sim = 0
     tb_area = (tb[2] - tb[0]) * (tb[3] - tb[1])
-    for pb in pred_box:
+    ui = -1
+    for i, pb in enumerate(pred_box):
+      if used[i]: continue
+
       y1 = max(tb[0], pb[0])
       y2 = min(tb[2], pb[2])
       x1 = max(tb[1], pb[1])
       x2 = min(tb[3], pb[3])
       intersection = max(x2 - x1, 0) * max(y2 - y1, 0)
       pb_area = (pb[2] - pb[0]) * (pb[3] - pb[1])
-      union = box_area + boxes_area - intersection
+      union = pb_area + tb_area - intersection
       sim = intersection / union
-      if (sim > max_sim): max_sim = sim
+      if (sim > max_sim): 
+        max_sim = sim
+        ui = i
 
     if verbose > 0: print("sim: {}".format(max_sim)) 
 
-    
     if max_sim >= threshold:
-      pred_sets.remove(pred_set)
+      used[ui] = True
       true_pos += 1  # in true and pred mask
     else:
       false_neg += 1 # in true mask but not in pred mask
 
+  false_pos = used.count(False)
+  # in pred mask but not in true mask
+
+  if true_pos + false_pos == 0: precision = 0
+  else: precision = true_pos / (true_pos + false_pos)
+  
+  if true_pos + false_neg == 0: recall = 0
+  else: recall = true_pos / (true_pos + false_neg)
+
+  if precision + recall == 0: f1_score = 0
+  else: f1_score =  2 * (precision * recall) / (precision + recall)
+
+  return (true_pos, true_neg, false_pos, false_neg, precision, recall, f1_score)
   
 
 def confusion_maxtrix_by_jaccard_similarity(true_masks, pred_masks, threshold = 0.6, verbose = 0):
