@@ -37,12 +37,19 @@ def post_process_mask(event, x, y, flags, param):
 
 
 if len(sys.argv) != 3:
-  print("usage: python QC_bubble/post_processing.py checkpoint_dir threshold")
+  print("usage: python QC_bubble/post_processing.py checkpoint_dir ellipse_or_rect(e|r)")
   sys.exit()
 
 # read from command line arguments
 checkpoint_dir = sys.argv[1]
-threshold = int(sys.argv[2])
+threshold = -1
+cv2_draw_type = sys.argv[2]
+
+if sys.argv[2] == "e": cv2_draw_type = "ellipse"
+elif sys.argv[2] == "r": cv2_draw_type = "rect"
+else:
+  print("usage: python QC_bubble/post_processing.py checkpoint_dir ellipse_or_rect(e|r)")
+  sys.exit()
 
 # make sure the checkpoint exists
 if not os.path.isdir(checkpoint_dir):
@@ -79,8 +86,11 @@ for i, mask in enumerate(masks):
 
 
 removed_masks = set()
-cv2.namedWindow("bubble")
+cv2.namedWindow("bubble", cv2.WINDOW_NORMAL)
 cv2.setMouseCallback('bubble', post_process_mask, (original_image, img, masks, mask_ids, removed_masks, colors, threshold))
+
+
+
 
 while True:
   cv2.imshow("bubble", img)
