@@ -64,6 +64,7 @@ def detect(model_path = "bubble_mask_rcnn.h5", images_path = [],fitting_type=[],
     
     print("Processing image ", img_name, flush = True)
     image = cv2.imread(img_name)
+
     total_bubble_set =[]
     total_roi, total_class_ids, total_scores, total_mask= [],[],[],[]
 
@@ -78,10 +79,14 @@ def detect(model_path = "bubble_mask_rcnn.h5", images_path = [],fitting_type=[],
     new_size = math.ceil(img_max_dim/64.0)*64
 
     # To various image size, we provide different re-scaling detection sequence
-    if img_max_dim > range_lst[-1]: 
-      img_size_lst = [new_size, new_size - 512, new_size + 512, new_size - 512 * 2, new_size + 512 * 2]
+    if img_max_dim > range_lst[-1]:
+      img_size_lst = range(new_size - 512 * 2, new_size + 512 * 2 + 1, 256)
+      # img_size_lst = [new_size, new_size - 512, new_size + 512, new_size - 512 * 2, new_size + 512 * 2]
     else:
-      img_size_lst = [new_size, new_size - 256, new_size + 256] + img_size_lst
+      if new_size - 256 > 256:
+        img_size_lst = [new_size, new_size - 256, new_size + 256] + img_size_lst
+      else:
+        img_size_lst = [new_size, new_size + 256] + img_size_lst
 
     for item in img_size_lst:
       info = ExtractMask(img_name, fitting_type, item)     
@@ -144,8 +149,11 @@ def detect(model_path = "bubble_mask_rcnn.h5", images_path = [],fitting_type=[],
       true_masks = np.load(annot, allow_pickle = True)
       true_masks = loc_to_masks((image.shape[0], image.shape[1]), true_masks)
       true_masks = get_masks(true_masks)
-      cm = confusion_maxtrix_by_jaccard_similarity(true_masks, total_mask)
-      save_confusion_matrix(checkpoint_dir + "/cm.txt", cm)
+      for t in [0.5, 0.6, 0.7, 0.8, 0.9]:
+        cm = confusion_maxtrix_by_jaccard_similarity(true_masks, total_mask, t)
+        save_confusion_matrix("{}/cm-{}.txt".format(checkpoint_dir, t), cm)
+        cm = confusion_maxtrix_bbx_by_jaccard_similarity(true_masks, total_mask, t)
+        save_confusion_matrix("{}/bbx-cm-{}.txt".format(checkpoint_dir, t), cm)
 
     if len(total_class_ids) != 0:
       save_fig(fig, checkpoint_dir  + "/mask_image.png")
@@ -169,8 +177,10 @@ class ExtractMask:
   # input an image path
   # return a frame of all masks in this image 
   def extract_masks(self, model):
-    image = cv2.imread(self.images_path)
-    grey = image[:, : , 0:1]
+    image = cv2.imread(self.images_path, 0)
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+    image = clahe.apply(image)
+    grey = image[..., np.newaxis]
     false_pos = 0
     
     model.config.MEAN_PIXEL = np.array([np.mean(grey) * 0.85])

@@ -19,7 +19,7 @@ from utils import *
 
 class BubbleDataset(mrcnn.utils.Dataset):
 
-  def load_dataset(self, dataset_dir, is_train=True):
+  def load_dataset(self, dataset_dir, is_train=True, split = 0.8):
     self.add_class("dataset", 1, "bubble")
 
     images_dir = dataset_dir + '/images/'
@@ -31,15 +31,19 @@ class BubbleDataset(mrcnn.utils.Dataset):
     random.seed(23423) 
     random.shuffle(filenames)
     if is_train:
-      filenames = filenames[: int(0.8 * len(filenames))]
+      filenames = filenames[: int(split * len(filenames))]
     else:
-      filenames = filenames[int(0.8 * len(filenames)) : ]
+      filenames = filenames[int(split * len(filenames)) : ]
 
     for filename in filenames:
       image_id = filename[:-4]
       img_path = images_dir + filename
       ann_path = annotations_dir + image_id + '.npy'
       self.add_image('dataset', image_id=image_id, path=img_path, annotation=ann_path)
+
+    # if is_train and dataset_dir != "./rotate_dataset":
+    #   self.load_dataset("./rotate_dataset", True, 1)
+
     print(len(self.image_info))
     return len(self.image_info)
 
@@ -116,8 +120,8 @@ class BubbleConfig(mrcnn.config.Config):
   TRAIN_ROIS_PER_IMAGE = 128
   
   IMAGE_RESIZE_MODE = "crop"
-  IMAGE_MIN_DIM = 640
-  IMAGE_MAX_DIM = 640
+  IMAGE_MIN_DIM = 512
+  IMAGE_MAX_DIM = 512
   IMAGE_MIN_SCALE = 2.0
   
   MEAN_PIXEL = np.array([127.5])
@@ -146,6 +150,8 @@ def train(model_path = "bubble_mask_rcnn.h5", dataset = "bubble_dataset", epoch 
   valid_dataset.prepare()
 
   bubble_config = BubbleConfig()
+
+  print(tsize, vsize)
   bubble_config.STEPS_PER_EPOCH = tsize
   bubble_config.VALIDATION_STEPS = vsize
 
@@ -168,5 +174,5 @@ def train(model_path = "bubble_mask_rcnn.h5", dataset = "bubble_dataset", epoch 
 
   model.keras_model.save_weights(model_path)
 
-train("no_border2.h5", "bubble_dataset", 20)
+train("no_border3.h5", "bubble_dataset", 40)
 
