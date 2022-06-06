@@ -199,11 +199,11 @@ class ExtractMask:
     if len(cnt) <= 10: return False
 
     if self.cv2_draw_type =='ellipse':
-      long_d, short_d = draw_ellipse(cnt, binary_mask)
+      _, long_d, short_d, ratio = draw_ellipse(cnt, binary_mask)
     else: 
-      long_d, short_d = draw_rotated_rect(cnt, binary_mask)
+      _, long_d, short_d, ratio = draw_rotated_rect(cnt, binary_mask)
 
-    if long_d > 0: return True
+    if ratio > 0: return True
     return False
     
 

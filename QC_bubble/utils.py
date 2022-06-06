@@ -67,10 +67,11 @@ def my_random_colors(N, bright=True):
   To get visually distinct colors, generate them in HSV space then
   convert to RGB.
   """
+
   brightness = 1.0 if bright else 0.7
   hsv = [(i / N, 1, brightness) for i in range(N)]
   colors = list(map(lambda c: colorsys.hsv_to_rgb(*c), hsv))
-  random.shuffle(colors)
+  # random.shuffle(colors)
   return colors
 
 
@@ -242,9 +243,9 @@ def draw_ellipse(cnt,binary_mask):
 
 
   if area_mask_fitting / area_binary_mask >= 1.25 or area_mask_fitting / area_binary_mask >= 1.25:
-    return -1,-1
+    return ellipse, long_p, short_p, -1
   else:
-    return long_p, short_p
+    return ellipse, long_p, short_p, abs(1 - area_mask_fitting / area_binary_mask)
 
 def draw_rotated_rect(cnt, binary_mask):
   rect = cv2.minAreaRect(cnt)
@@ -253,13 +254,20 @@ def draw_rotated_rect(cnt, binary_mask):
   long_p = max(width, height)
   short_p = min(width, height)
 
-  area_binary_mask = len(np.where(binary_mask == 255)[0])
+  area_binary_mask = len(np.where(binary_mask)[0])
   area_mask_fitting =  long_p * short_p
 
+
   if area_mask_fitting / area_binary_mask >= 1.25 or area_mask_fitting / area_binary_mask >=1.25:
-    return -1,-1
+    return rect, long_p, short_p, -1
   else:
-    return long_p, short_p
+    return rect, long_p, short_p, abs(1 - area_mask_fitting / area_binary_mask)
+
+def draw_circle(cnt, binary_mask):
+  (x,y),radius = cv2.minEnclosingCircle(cnt)
+  center = (int(x),int(y))
+  radius = int(radius)
+  return center, radius
 
 
 
@@ -269,9 +277,15 @@ def output_stat(filepath, image, masks, removed_masks = set(), cv2_draw_type = "
   # removed_masks = set(), containing unwilling id from 0 to N-1
   # savediris the directory to save all the statis-info
 
-  long_p_lst = []
-  short_p_lst = []
- 
+  long_p_lst, short_p_lst = [], []
+  long_p_lst_ellipse, short_p_lst_ellipse = [], []
+  long_p_lst_rect, short_p_lst_rect = [], []
+  p_lst_circle = []
+
+  rect = np.copy(image)
+  ellipse = np.copy(image)
+  circle = np.copy(image)
+  
 
   for i in range(masks.shape[2]):
     if i in removed_masks:
@@ -280,19 +294,72 @@ def output_stat(filepath, image, masks, removed_masks = set(), cv2_draw_type = "
     # Be carful binary_mask has already changed
     cnt = get_cnt(image,binary_mask,threshold)
  
-    if cv2_draw_type =='ellipse':
-      long_p, short_p = draw_ellipse(cnt, binary_mask)
-    else: 
-      long_p, short_p = draw_rotated_rect(cnt, binary_mask)
+    e, long_p_e, short_p_e, ratio_e = draw_ellipse(cnt, binary_mask)
+    r, long_p_r, short_p_r, ratio_r = draw_rotated_rect(cnt, binary_mask)
+    center, radius = draw_circle(cnt, binary_mask)
 
-    if long_p > 0:
-      long_p_lst.append(long_p)
-      short_p_lst.append(short_p)
-      
     
+
+    # print(ratio_e, ratio_r)
+    
+    #   long_p, short_p = long_p_e, short_p_e
+    # else:
+    #   long_p, short_p = long_p_r, short_p_r
+
+    if ratio_e > 0:
+
+      # ellipse 
+      ellipse = cv2.ellipse(ellipse,e,(0,255,0),2)
+      long_p_lst_ellipse.append(long_p_e)
+      short_p_lst_ellipse.append(short_p_e)
+
+      # rect 
+      box = cv2.boxPoints(r)
+      box = np.int0(box)
+      rect = cv2.drawContours(rect,[box],0,(0,0,255),2)
+
+      long_p_lst_rect.append(long_p_r)
+      short_p_lst_rect.append(short_p_r)
+
+      # circle
+      p_lst_circle.append(radius)
+      circle = cv2.circle(circle,center,radius,(255,0,0),2)
+
+
+      # average of ellipse and rect
+      if ratio_r > 0:
+        long_p_lst.append((long_p_e + long_p_r) / 2)
+        short_p_lst.append((short_p_e + short_p_r) / 2)
+      else:
+        long_p_lst.append(long_p_e)
+        short_p_lst.append(short_p_e)
+
+
+      
   dict_r= {'long d/pixel': long_p_lst, 'short d/pixel':short_p_lst}
   frame = pd.DataFrame(dict_r)
-  frame.to_csv(filepath, index= False)
+  frame.to_csv(filepath + "/cnn_human_stat.csv", index= False)
+
+
+  dict_r= {'long d/pixel': long_p_lst_ellipse, 'short d/pixel':short_p_lst_ellipse}
+  frame = pd.DataFrame(dict_r)
+  frame.to_csv(filepath + "/cnn_human_stat_ellipse.csv", index= False)
+
+  dict_r= {'long d/pixel': long_p_lst_rect, 'short d/pixel':short_p_lst_rect}
+  frame = pd.DataFrame(dict_r)
+  frame.to_csv(filepath + "/cnn_human_stat_rect.csv", index= False)
+
+
+  dict_r= {'long d/pixel': p_lst_circle, 'short d/pixel': p_lst_circle}
+  frame = pd.DataFrame(dict_r)
+  frame.to_csv(filepath + "/cnn_human_stat_circle.csv", index= False)
+
+
+  cv2.imwrite(filepath + "/rect.png", rect)
+  cv2.imwrite(filepath + "/ellipse.png", ellipse)
+  cv2.imwrite(filepath + "/circle.png", circle)
+
+  return len(long_p_lst)
 
 
 def masks_to_loc(masks):
