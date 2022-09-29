@@ -26,7 +26,6 @@ class BubbleDataset(mrcnn.utils.Dataset):
     annotations_dir = dataset_dir + '/annots/'
 
     # Get image files and shuffle the train image
-
     filenames = sorted(os.listdir(images_dir))
     random.seed(23423) 
     random.shuffle(filenames)
@@ -40,44 +39,15 @@ class BubbleDataset(mrcnn.utils.Dataset):
       img_path = images_dir + filename
       ann_path = annotations_dir + image_id + '.npy'
       self.add_image('dataset', image_id=image_id, path=img_path, annotation=ann_path)
-
-    # if is_train and dataset_dir != "./rotate_dataset":
-    #   self.load_dataset("./rotate_dataset", True, 1)
-
-    print(len(self.image_info))
+    
     return len(self.image_info)
 
-  def extract_boxes(self, filename):
-    tree = xml.etree.ElementTree.parse(filename)
-
-    root = tree.getroot()
-
-    boxes = list()
-    for box in root.findall('.//bndbox'):
-      xmin = int(box.find('xmin').text)
-      ymin = int(box.find('ymin').text)
-      xmax = int(box.find('xmax').text)
-      ymax = int(box.find('ymax').text)
-      coors = [xmin, ymin, xmax, ymax]
-      boxes.append(coors)
-
-    width = int(root.find('.//size/width').text)
-    height = int(root.find('.//size/height').text)
-    return boxes, width, height
 
   def load_image(self, image_id):
-    """Load the specified image and return a [H,W,3] Numpy array.
-    """
+   
     # Load image
     image = skimage.io.imread(self.image_info[image_id]['path'])
-    # print(image.shape)
     image = image.reshape((image.shape[0], image.shape[1], 1))
-    # # If grayscale. Convert to RGB for consistency.
-    # if image.ndim != 3:
-    #     image = skimage.color.gray2rgb(image)
-    # # If has an alpha channel, remove it for consistency
-    # if image.shape[-1] == 4:
-    #     image = image[..., :3]
     return image
 
   def load_mask(self, image_id):
@@ -95,12 +65,6 @@ class BubbleDataset(mrcnn.utils.Dataset):
     for _ in range(masks.shape[2]):
       class_ids.append(self.class_names.index('bubble'))
 
-    # for i in range(len(boxes)):
-    #   box = boxes[i]
-    #   row_s, row_e = box[1], box[3]
-    #   col_s, col_e = box[0], box[2]
-    #   masks[row_s:row_e, col_s:col_e, i] = 1
-    #   class_ids.append(self.class_names.index('bubble'))
     return masks, asarray(class_ids, dtype='int32')
 
 class BubbleConfig(mrcnn.config.Config):
@@ -141,20 +105,23 @@ class BubbleConfig(mrcnn.config.Config):
 
 def train(model_path = "bubble_mask_rcnn.h5", dataset = "bubble_dataset", epoch = 5):
 
+  # load training dataset 
   train_set = BubbleDataset()
   tsize = train_set.load_dataset(dataset_dir=dataset, is_train=True)
   train_set.prepare()
 
+  # load validation dataset
   valid_dataset = BubbleDataset()
   vsize = valid_dataset.load_dataset(dataset_dir=dataset, is_train=False)
   valid_dataset.prepare()
 
   bubble_config = BubbleConfig()
 
-  print(tsize, vsize)
+  print("train size {}, validation size {}".format(tsize, vsize))
   bubble_config.STEPS_PER_EPOCH = tsize
   bubble_config.VALIDATION_STEPS = vsize
 
+  # train the model
   model = mrcnn.model.MaskRCNN(mode='training', 
                                model_dir='./', 
                                config=bubble_config)
@@ -163,16 +130,18 @@ def train(model_path = "bubble_mask_rcnn.h5", dataset = "bubble_dataset", epoch 
                      by_name=True, 
                      exclude=["conv1", "mrcnn_class_logits", "mrcnn_bbox_fc",  "mrcnn_bbox", "mrcnn_mask"])
 
-  # model.load_weights(filepath='./chao_test/chao_test1.h5', by_name=True)
-
   model.train(train_dataset=train_set, 
               val_dataset=valid_dataset, 
               learning_rate=bubble_config.LEARNING_RATE / 10, 
               epochs=epoch, 
               layers="all")
-              # (conv1)|(res5.*)|(bn5.*)|(mrcnn\_.*)|(rpn\_.*)|(fpn\_.*)
 
+  # save the model
   model.keras_model.save_weights(model_path)
 
-train("no_border3.h5", "bubble_dataset", 40)
+if len(sys.argv) != 3:
+  print("python image_data_export.py dataset_dir epochs")
+  sys.exit()
 
+
+train("model.h5", sys.argv[1], int(sys.argv[2]))
