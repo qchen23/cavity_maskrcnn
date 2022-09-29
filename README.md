@@ -160,11 +160,19 @@ UNIX> python QC_bubble/bubble_detection.py --model model.h5 --output_dir out5 --
 UNIX> python QC_bubble/bubble_detection.py --model model.h5 --output_dir out6 --dataset image_examples --rescale_list 512 1024 1536 2048 2560 3072
 
 ```
+Below images shows the results going from one rescale to six rescales. The left image significantly shows the importance of rescale methods.
+![](./doc_images/rescale.png)
 
 
+On the downside, doing object detection on the same image with different sizes increase increases the running time. Thus, we also offer a parallel detection modeule (`QC_bubble/parallel_detection.py`) to ease this issue by processing multiple images in different processors/GUPs. The arguments `--model, --output_dir, --dataset` has the same meaning as `QC_bubble/bubble_detection.py`. `--processor` specifies the number of processors to process the entire dataset.
 
-
-It also increases the running time. Thus, we also offer a parallel detection modeule (`QC_bubble/`) to ease this issue by processing multiple images in different processors/GUPs.
+```
+UNIX> python QC_bubble/parallel_detection.py 
+usage: parallel_detection.py [-h] --output_dir OUTPUT_DIR --dataset DATASET
+                             --model MODEL --processor PROCESSOR
+parallel_detection.py: error: the following arguments are required: --output_dir/-o, --dataset/-d, --model/-m, --processor/-p
+UNIX> python QC_bubble/parallel_detection.py --model model.h5 --output_dir out --dataset image_examples --processor 3
+```
 
 
 ### Step 4 - Correct the false positive
