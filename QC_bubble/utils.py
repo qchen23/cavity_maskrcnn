@@ -71,7 +71,8 @@ def my_random_colors(N, bright=True):
   brightness = 1.0 if bright else 0.7
   hsv = [(i / N, 1, brightness) for i in range(N)]
   colors = list(map(lambda c: colorsys.hsv_to_rgb(*c), hsv))
-  # random.shuffle(colors)
+  random.seed(0x1237)
+  random.shuffle(colors)
   return colors
 
 
@@ -271,7 +272,7 @@ def draw_circle(cnt, binary_mask):
 
 
 
-def output_stat(filepath, image, masks, removed_masks = set(), cv2_draw_type = "ellipse", threshold=-1):
+def output_stat(filepath, image, masks, removed_masks = set(), threshold=-1):
   # image is the containing intensity 3D array
   # masks = (image_width, image_height,instance) containing only True or False
   # removed_masks = set(), containing unwilling id from 0 to N-1
@@ -338,21 +339,20 @@ def output_stat(filepath, image, masks, removed_masks = set(), cv2_draw_type = "
       
   dict_r= {'long d/pixel': long_p_lst, 'short d/pixel':short_p_lst}
   frame = pd.DataFrame(dict_r)
-  frame.to_csv(filepath + "/cnn_human_stat.csv", index= False)
-
+  frame.to_csv(filepath + "/cnn_stat_average.csv", index= False)
 
   dict_r= {'long d/pixel': long_p_lst_ellipse, 'short d/pixel':short_p_lst_ellipse}
   frame = pd.DataFrame(dict_r)
-  frame.to_csv(filepath + "/cnn_human_stat_ellipse.csv", index= False)
+  frame.to_csv(filepath + "/cnn_stat_ellipse.csv", index= False)
 
   dict_r= {'long d/pixel': long_p_lst_rect, 'short d/pixel':short_p_lst_rect}
   frame = pd.DataFrame(dict_r)
-  frame.to_csv(filepath + "/cnn_human_stat_rect.csv", index= False)
+  frame.to_csv(filepath + "/cnn_stat_rect.csv", index= False)
 
 
   dict_r= {'long d/pixel': p_lst_circle, 'short d/pixel': p_lst_circle}
   frame = pd.DataFrame(dict_r)
-  frame.to_csv(filepath + "/cnn_human_stat_circle.csv", index= False)
+  frame.to_csv(filepath + "/cnn_stat_circle.csv", index= False)
 
 
   cv2.imwrite(filepath + "/rect.png", rect)
