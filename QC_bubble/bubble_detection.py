@@ -47,7 +47,7 @@ def save_confusion_matrix(filepath, confusion_matrix):
     f.write("TP = {}, TN = {}, FP = {}, FN = {}, precision = {}, recall = {}, f1_score = {}\n".format(true_pos, true_neg, false_pos, false_neg, precision, recall, f1_score))
 
 
-def detect(model_path = "bubble_mask_rcnn.h5", images_path = [],fitting_type=[],saveframe_address_dir='outputs/', starting_index = 0):
+def detect(model_path = "bubble_mask_rcnn.h5", images_path = [],fitting_type=[],saveframe_address_dir='outputs/', starting_index = 0, rescale_list = []):
   CLASS_NAMES =['BG','bubble']
 
   model = mrcnn.model.MaskRCNN(mode="inference", 
@@ -57,8 +57,7 @@ def detect(model_path = "bubble_mask_rcnn.h5", images_path = [],fitting_type=[],
   model.load_weights(filepath=model_path,
                      by_name=True)
 
-  range_lst = [512, 1024, 1536, 2048, 2560, 3072]
-  big_range_lst = [1536, 2048, 3072, 3584, 4096, 4608]
+  
   # range_lst = np.arange(512, 3073, 512)
   # range_lst = [512,1024]
 
@@ -76,18 +75,8 @@ def detect(model_path = "bubble_mask_rcnn.h5", images_path = [],fitting_type=[],
     if not os.path.exists(checkpoint_dir):
       os.mkdir(checkpoint_dir)
 
-
-    img_size_lst = range_lst
-    img_max_dim = max(image.shape[0], image.shape[1])
-    new_size = math.ceil(img_max_dim/64.0)*64
-
-    # To various image size, we provide different re-scaling detection sequence
-    if img_max_dim > 2048:
-      img_size_lst = big_range_lst
-      # img_size_lst = [new_size, new_size - 512, new_size + 512, new_size - 512 * 2, new_size + 512 * 2]
-
     # extra mask from different scales of image and combine them together
-    for item in img_size_lst:
+    for item in rescale_list:
       info = ExtractMask(img_name, fitting_type, item)     
       rois, masks, class_ids, scores = info.extract_masks(model)
 
@@ -143,6 +132,8 @@ def detect(model_path = "bubble_mask_rcnn.h5", images_path = [],fitting_type=[],
 
     annot = (img_name[:-4] + ".npy").replace("images", "annots")
 
+    # confusion matrix info
+    ''' 
     if os.path.exists(annot):
       true_masks = np.load(annot, allow_pickle = True)
       true_masks = loc_to_masks((image.shape[0], image.shape[1]), true_masks)
@@ -152,6 +143,7 @@ def detect(model_path = "bubble_mask_rcnn.h5", images_path = [],fitting_type=[],
         save_confusion_matrix("{}/cm-{}.txt".format(checkpoint_dir, t), cm)
         cm = confusion_maxtrix_bbx_by_jaccard_similarity(true_masks, total_mask, t)
         save_confusion_matrix("{}/bbx-cm-{}.txt".format(checkpoint_dir, t), cm)
+    '''
 
     if len(total_class_ids) != 0:
       save_fig(fig, checkpoint_dir  + "/mask_image.png")
@@ -224,17 +216,21 @@ if __name__ == '__main__':
   parser.add_argument("--model", "-m", required = True, type=str, help="model to run")
   parser.add_argument("--starting", "-s", default = 0, type = int, help="the starting index of the file")
   parser.add_argument("--num_images", "-n", default = 10000000, type=int, help = "the number of images to be detected")
+  parser.add_argument("--rescale_list", "-r", nargs='+', type=int, help="a list of dimensions to rescale the image")
   args = parser.parse_args()
 
-
+ 
   # read arguments
+  rescale_list = [512, 1024, 1536, 2048, 2560, 3072]
+  if args.rescale_list: rescale_list = args.rescale_list
+  rescale_list = [math.ceil(d/64.0)*64 for d in rescale_list]
   os.makedirs(args.output_dir, exist_ok = True)
   data_dir = args.dataset
   filenames = sorted(os.listdir(data_dir))[args.starting:args.starting + args.num_images]
   data_sets = [ data_dir + "/" + f for f in filenames]
   
   # perform detection process
-  detect(args.model,data_sets, ['ellipse'] * len(data_sets), args.output_dir, args.starting)
+  detect(args.model,data_sets, ['ellipse'] * len(data_sets), args.output_dir, args.starting, rescale_list)
 
 
 # filenames = sorted(os.listdir("./bubble_dataset/images"))
