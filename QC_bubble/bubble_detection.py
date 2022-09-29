@@ -4,6 +4,9 @@ import math
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 tf.get_logger().setLevel('ERROR')
 
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
+
 import mrcnn.config
 import mrcnn.model
 import mrcnn.visualize
@@ -11,7 +14,6 @@ import cv2
 import numpy as np 
 import pandas as pd
 import matplotlib.pyplot as plt
-import random
 from utils import *
 import argparse
 
@@ -56,11 +58,12 @@ def detect(model_path = "bubble_mask_rcnn.h5", images_path = [],fitting_type=[],
                      by_name=True)
 
   range_lst = [512, 1024, 1536, 2048, 2560, 3072]
+  big_range_lst = [1536, 2048, 3072, 3584, 4096, 4608]
   # range_lst = np.arange(512, 3073, 512)
   # range_lst = [512,1024]
 
   frame_index = starting_index
-  for img_name,  fitting_type  in zip(images_path,  fitting_type):
+  for img_name, fitting_type in zip(images_path, fitting_type):
     
     print("Processing image ", img_name, flush = True)
     image = cv2.imread(img_name)
@@ -79,15 +82,11 @@ def detect(model_path = "bubble_mask_rcnn.h5", images_path = [],fitting_type=[],
     new_size = math.ceil(img_max_dim/64.0)*64
 
     # To various image size, we provide different re-scaling detection sequence
-    if img_max_dim > range_lst[-1]:
-      img_size_lst = range(new_size - 512 * 2, new_size + 512 * 2 + 1, 256)
+    if img_max_dim > 2048:
+      img_size_lst = big_range_lst
       # img_size_lst = [new_size, new_size - 512, new_size + 512, new_size - 512 * 2, new_size + 512 * 2]
-    else:
-      if new_size - 256 > 256:
-        img_size_lst = [new_size, new_size - 256, new_size + 256] + img_size_lst
-      else:
-        img_size_lst = [new_size, new_size + 256] + img_size_lst
 
+    # extra mask from different scales of image and combine them together
     for item in img_size_lst:
       info = ExtractMask(img_name, fitting_type, item)     
       rois, masks, class_ids, scores = info.extract_masks(model)
@@ -123,7 +122,6 @@ def detect(model_path = "bubble_mask_rcnn.h5", images_path = [],fitting_type=[],
 
 
     
-
     total_mask= np.moveaxis(np.array(total_mask),0,-1)
     total_roi = np.array(total_roi)
     total_class_ids = np.array(total_class_ids)
@@ -158,7 +156,7 @@ def detect(model_path = "bubble_mask_rcnn.h5", images_path = [],fitting_type=[],
     if len(total_class_ids) != 0:
       save_fig(fig, checkpoint_dir  + "/mask_image.png")
       np.save(checkpoint_dir  + "/masks.npy", masks_to_loc(total_mask))
-      output_stat(checkpoint_dir + "/cnn_stat.csv", image, total_mask)
+      output_stat(checkpoint_dir, image, total_mask)
 
     plt.close("all")
     frame_index += 1
@@ -222,16 +220,20 @@ if __name__ == '__main__':
 
   parser = argparse.ArgumentParser(description="Bubble detection")
   parser.add_argument("--output_dir", "-o", required=True, type=str, help="output directory to store the checkpoint file")
-  parser.add_argument("--data_set", "-d", required = True, type=str, help="data_set to do the detection")
+  parser.add_argument("--dataset", "-d", required = True, type=str, help="dataset to do the detection")
   parser.add_argument("--model", "-m", required = True, type=str, help="model to run")
   parser.add_argument("--starting", "-s", default = 0, type = int, help="the starting index of the file")
-  parser.add_argument("--num_detect", "-n", default = 10000000, type=int, help = "the number of images to be detected")
+  parser.add_argument("--num_images", "-n", default = 10000000, type=int, help = "the number of images to be detected")
   args = parser.parse_args()
 
+
+  # read arguments
   os.makedirs(args.output_dir, exist_ok = True)
-  data_dir = args.data_set
-  filenames = sorted(os.listdir(data_dir))[args.starting:args.starting + args.num_detect]
-  data_sets = [ data_dir + f for f in filenames]
+  data_dir = args.dataset
+  filenames = sorted(os.listdir(data_dir))[args.starting:args.starting + args.num_images]
+  data_sets = [ data_dir + "/" + f for f in filenames]
+  
+  # perform detection process
   detect(args.model,data_sets, ['ellipse'] * len(data_sets), args.output_dir, args.starting)
 
 
