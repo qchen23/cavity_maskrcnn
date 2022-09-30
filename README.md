@@ -6,7 +6,7 @@
 This framework utilize the Mask R-CNN to train a model, and OpenCV to extract the statistical information from object masks. We have explored this decent framework with cavities dataset. It also provides the post-processing component to help you remove unwanted objects. We will explain each modeule with cavities dataset in detail below.
 
 
-# Requirement
+## Requirement
 
 - We use python 3.6
 - There's a `requirement.txt` that includes all the packages needed to run our codes
@@ -164,18 +164,34 @@ Below images shows the results going from one rescale to six rescales. The left 
 ![](./doc_images/rescale.png)
 
 
-On the downside, doing object detection on the same image with different sizes increase increases the running time. Thus, we also offer a parallel detection modeule (`QC_bubble/parallel_detection.py`) to ease this issue by processing multiple images in different processors/GUPs. The arguments `--model, --output_dir, --dataset` has the same meaning as `QC_bubble/bubble_detection.py`. `--processor` specifies the number of processors to process the entire dataset.
+On the downside, doing object detection on the same image with different sizes increase increases the running time. Thus, we also offer a parallel detection modeule (`QC_bubble/parallel_detection.py`) to ease this issue by processing multiple images in different processors/GUPs. The arguments `--model, --output_dir, --dataset` has the same meaning as `QC_bubble/bubble_detection.py`. `--processor` specifies the number of processors to process the entire dataset. This benifites a lot when your have access a lot of GPUs and many images to be detected.
 
 ```
 UNIX> python QC_bubble/parallel_detection.py 
 usage: parallel_detection.py [-h] --output_dir OUTPUT_DIR --dataset DATASET
                              --model MODEL --processor PROCESSOR
 parallel_detection.py: error: the following arguments are required: --output_dir/-o, --dataset/-d, --model/-m, --processor/-p
-UNIX> python QC_bubble/parallel_detection.py --model model.h5 --output_dir out --dataset image_examples --processor 3
+UNIX> time python QC_bubble/parallel_detection.py --model model.h5 --output_dir out --dataset image_examples --processor 3
+real    1m5.641s
+user    0m0.898s
+sys     0m0.865s
+UNIX> time python QC_bubble/parallel_detection.py --model model.h5 --output_dir out --dataset image_examples --processor 1
+real    1m47.006s
+user    0m1.099s
+sys     0m1.339s
 ```
 
-
 ### Step 4 - Correct the false positive
+Fianlly, we have `QC_bubble/post_processing.py` to remove the false positve. You can remove the mask or add it back by cliking it. You can press `e/E` to save the change and exit the program. This program takes two arguments.
 
+`checkpoint_dir` - A string specifying the checkpoint_dir obtained from detection process (step 3).
+`use_remove` - A string that is either `"T"` or `"F"`. `"T"` is to load the change you saved last time.
 
- scp yue@160.36.59.235:~//Projects/dl_final/bubble_maskrcnn/no_border2.h5 model.h5
+```
+UNIX> python QC_bubble/post_processing.py out1/checkpoint-3/ F
+Processing out1/checkpoint-1/
+```
+
+## `QC_bubble/utils.py`
+
+`QC_bubble/utils.py` implment several important functions that can be used across many other `.py` files, such as calculating intersection over union (IoU), converting boolean mask matrix to a list of position, etc.
