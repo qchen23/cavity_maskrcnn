@@ -49,7 +49,7 @@ If you have multiple processors, doing the below could speed up downloading. Bel
 ```
 UNIX> for i in `seq 0 6`; do python QC_bubble/image_data_export.py "$((i*100))" 100 &  done
 ```
-### Auxiliary - View the image and masks
+#### Auxiliary - View the image and masks
 
 We have `QC_bubble/read_mask.py` to help you view image with masks. It takes the image file followed by an annotation file you obtained from step 1.
 
@@ -67,8 +67,8 @@ UNIX> python QC_bubble/read_mask.py bubble_dataset/images/00009.png bubble_datas
 
 We have `QC_bubble/bubble.py` to train a model. It takes two arguments.
 
-`dataset_dir` - An string specifying the directory of the dataset
-`epochs` - An integer specifying the number of epochs to train the model
+- `dataset_dir` - An string specifying the directory of the dataset
+- `epochs` - An integer specifying the number of epochs to train the model
 
 The model will be saved as `model.h5`
 
