@@ -140,7 +140,7 @@ def train(model_path = "bubble_mask_rcnn.h5", dataset = "bubble_dataset", epoch 
   model.keras_model.save_weights(model_path)
 
 if len(sys.argv) != 3:
-  print("python image_data_export.py dataset_dir epochs")
+  print("usage: python QC_bubble/bubble.py dataset_dir epochs")
   sys.exit()
 
 

@@ -47,7 +47,7 @@ def save_confusion_matrix(filepath, confusion_matrix):
     f.write("TP = {}, TN = {}, FP = {}, FN = {}, precision = {}, recall = {}, f1_score = {}\n".format(true_pos, true_neg, false_pos, false_neg, precision, recall, f1_score))
 
 
-def detect(model_path = "bubble_mask_rcnn.h5", images_path = [],fitting_type=[],saveframe_address_dir='outputs/', starting_index = 0, rescale_list = []):
+def detect(model_path = "bubble_mask_rcnn.h5", images_path = [],fitting_types=[],saveframe_address_dir='outputs/', starting_index = 0, rescale_list = []):
   CLASS_NAMES =['BG','bubble']
 
   model = mrcnn.model.MaskRCNN(mode="inference", 
@@ -62,7 +62,7 @@ def detect(model_path = "bubble_mask_rcnn.h5", images_path = [],fitting_type=[],
   # range_lst = [512,1024]
 
   frame_index = starting_index
-  for img_name, fitting_type in zip(images_path, fitting_type):
+  for img_name, fitting_type in zip(images_path, fitting_types):
     
     print("Processing image ", img_name, flush = True)
     image = cv2.imread(img_name)
@@ -230,7 +230,7 @@ if __name__ == '__main__':
   data_sets = [ data_dir + "/" + f for f in filenames]
   
   # perform detection process
-  detect(args.model,data_sets, ['ellipse'] * len(data_sets), args.output_dir, args.starting, rescale_list)
+  detect(args.model,data_sets, ['ellipse'] * len(data_sets), args.output_dir, args.starting, rescale_list=rescale_list)
 
 
 # filenames = sorted(os.listdir("./bubble_dataset/images"))

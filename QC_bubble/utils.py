@@ -7,6 +7,8 @@ import os
 from mrcnn.utils import *
 
 
+
+# find (x, y) locations that belongs to a given mask
 def dfs(r, c, mask, visited):
 
   rows, cols = mask.shape[0], mask.shape[1]
@@ -26,7 +28,10 @@ def dfs(r, c, mask, visited):
     if c + 1 < cols and mask[r][c+1] and not visited[r][c+1]: stack.append((r,c+1))
   
   return path
-def bubble_overlap(mask):
+
+# Group masks by component.
+# It's possible that human annotated multiple bubbles as one single bubble. 
+def split_multiple_masks(mask):
   visited = np.full((mask.shape), False)
   locs = np.where(mask)
   rv = []
@@ -40,17 +45,21 @@ def bubble_overlap(mask):
   return rv
 
 
+
+# get masks
 def get_masks(masks):
 
   total_masks = []
   for i in range(masks.shape[2]):
-    total_masks = total_masks + bubble_overlap(masks[:, :, i])
+    total_masks = total_masks + split_multiple_masks(masks[:, :, i])
 
   total_masks = np.array(total_masks)
   total_masks = np.moveaxis(np.array(total_masks),0,-1)
 
   return total_masks
 
+
+# Apply mask onto image
 def my_apply_mask(image, mask, color, threshold, alpha=0.5):
 
   for i, j in zip(mask[0], mask[1]):
@@ -60,7 +69,7 @@ def my_apply_mask(image, mask, color, threshold, alpha=0.5):
   return image
 
 
-
+# Get random color
 def my_random_colors(N, bright=True):
   """
   Generate random colors.
@@ -76,6 +85,7 @@ def my_random_colors(N, bright=True):
   return colors
 
 
+# conver bool mask to a set of position
 def mask_array_to_position_set(mask_array):
   loc = np.where(mask_array == True)
   s = [(r, c) for r, c in zip(loc[0], loc[1])]
@@ -83,6 +93,8 @@ def mask_array_to_position_set(mask_array):
   return set(s)
 
 
+# return true if iou of two sets < IoU
+# otherwise return false
 def similarity(set_1, set_2, IoU):
   union = len(set_1.union(set_2))
   intersection = len(set_1.intersection(set_2))
@@ -92,6 +104,8 @@ def similarity(set_1, set_2, IoU):
   else:
     return True #considered as a same bubble
 
+# return true if overlapping part > overlapping_th
+# otherwise return false
 def overlapping(set_1,set_2,overlapping_th):
   intersection = len(set_1.intersection(set_2))
   if intersection/ len(set_1) > overlapping_th or intersection/ len(set_2) > overlapping_th:
@@ -100,6 +114,8 @@ def overlapping(set_1,set_2,overlapping_th):
     return False
 
 
+
+# compute the confrusion matrix by jaccard similarity based on bounding box
 def confusion_maxtrix_bbx_by_jaccard_similarity(true_masks, pred_masks, threshold = 0.6, verbose = 0):
   true_box = extract_bboxes(true_masks)
   pred_box = extract_bboxes(pred_masks)
@@ -154,6 +170,7 @@ def confusion_maxtrix_bbx_by_jaccard_similarity(true_masks, pred_masks, threshol
   return (true_pos, true_neg, false_pos, false_neg, precision, recall, f1_score)
   
 
+# compute the confrusion matrix by jaccard similarity based on the masks
 def confusion_maxtrix_by_jaccard_similarity(true_masks, pred_masks, threshold = 0.6, verbose = 0):
   pred_sets = []
 
@@ -206,6 +223,7 @@ def confusion_maxtrix_by_jaccard_similarity(true_masks, pred_masks, threshold = 
   return (true_pos, true_neg, false_pos, false_neg, precision, recall, f1_score)
 
 
+# Get contour using opencv lib
 def get_cnt(image, binary_mask, threshold = -1):
 
   # turn any pixel whose value > threshold to white pixel
@@ -226,8 +244,7 @@ def get_cnt(image, binary_mask, threshold = -1):
       cnt = c
   return cnt
 
-
-
+# fit a ellipse onto a mask
 def draw_ellipse(cnt,binary_mask):
   ellipse = cv2.fitEllipse(cnt)
   # the return value is the rotated rectangle in which the ellipse is inscribed
@@ -248,6 +265,7 @@ def draw_ellipse(cnt,binary_mask):
   else:
     return ellipse, long_p, short_p, abs(1 - area_mask_fitting / area_binary_mask)
 
+# fit a rect onto a mask
 def draw_rotated_rect(cnt, binary_mask):
   rect = cv2.minAreaRect(cnt)
   width = rect[1][0]
@@ -264,6 +282,7 @@ def draw_rotated_rect(cnt, binary_mask):
   else:
     return rect, long_p, short_p, abs(1 - area_mask_fitting / area_binary_mask)
 
+# fit a circle onto a mask
 def draw_circle(cnt, binary_mask):
   (x,y),radius = cv2.minEnclosingCircle(cnt)
   center = (int(x),int(y))
@@ -271,7 +290,7 @@ def draw_circle(cnt, binary_mask):
   return center, radius
 
 
-
+# output the statistical info
 def output_stat(filepath, image, masks, removed_masks = set(), threshold=-1):
   # image is the containing intensity 3D array
   # masks = (image_width, image_height,instance) containing only True or False
@@ -298,14 +317,6 @@ def output_stat(filepath, image, masks, removed_masks = set(), threshold=-1):
     e, long_p_e, short_p_e, ratio_e = draw_ellipse(cnt, binary_mask)
     r, long_p_r, short_p_r, ratio_r = draw_rotated_rect(cnt, binary_mask)
     center, radius = draw_circle(cnt, binary_mask)
-
-    
-
-    # print(ratio_e, ratio_r)
-    
-    #   long_p, short_p = long_p_e, short_p_e
-    # else:
-    #   long_p, short_p = long_p_r, short_p_r
 
     if ratio_e > 0:
 
@@ -362,6 +373,7 @@ def output_stat(filepath, image, masks, removed_masks = set(), threshold=-1):
   return len(long_p_lst)
 
 
+# convert bool mask to a list of mask positions
 def masks_to_loc(masks):
   all_locs = []
   for i in range(masks.shape[2]):
@@ -371,6 +383,7 @@ def masks_to_loc(masks):
 
   return np.array(all_locs, dtype=object)
 
+# convert mask location to bool mask
 def loc_to_masks(shape, locs):
   masks = np.full((shape[0], shape[1], len(locs)), False)
 
