@@ -3,12 +3,12 @@
 
 
 ## Overview
-This framework utilizes the Mask R-CNN to train a model and OpenCV to extract the statistical information from object masks. We have explored this decent framework with the cavities/bubble dataset. It also provides the post-processing component to help you remove unwanted objects. We will explain each module with the cavities dataset in detail below.
+This framework utilizes the Mask R-CNN to train a model and OpenCV to extract the statistical information from object masks. We have explored this decent framework with the cavity/bubble dataset. It also provides the post-processing component to help you remove unwanted objects. We will explain each module with the cavity dataset in detail below. You can find Mask R-CNN repo [here](https://github.com/matterport/Mask_RCNN).
 
 
 ## Software Requirement
 
-- We use python 3.6. We have not tested this in other versions.
+- We use python 3.6. We have not tested this framework in other Python versions.
 - There's a `requirement.txt` that includes all the packages needed to run our codes
 ```
 UNIX> pip install -r requirements.txt 
@@ -19,7 +19,7 @@ UNIX> python setup.py install
 ```
 
 
-## Cavities/bubble detection
+## Cavity/bubble detection
 
 ### Step 1 - Obtain the dataset
 
@@ -30,12 +30,12 @@ We use the `Labelbox` to annotate all the masks. Below is how you can download o
 - `starting_id` - An integer number specifying at which image to start to download. 
 - `num_images` - An integer number specifying the number of images to download. 
 
-Note: We have 685 images in the Labelbox, of which 228 are annotated, and the rest are discarded. So our total dataset size is 228. Unfortunately, downloading the images could take a while.
+Note: We have uploaded 370 images in the Labelbox, of which 228 are annotated, and the rest are discarded. So our total dataset size is 228. Unfortunately, downloading the images could take a while.
 ```
 UNIX> python QC_bubble/image_data_export.py
 usage: python QC_bubble/image_data_export.py starting_image num_images
 UNIX> python QC_bubble/image_data_export.py 0 100000
-The number of images 685
+The number of images 370
 Generate image 1
 Generate image 2
 Generate image 3
@@ -45,9 +45,9 @@ Generate image 4
 
 
 
-If you have multiple processors, doing the below could speed up downloading. Below uses seven processors.
+If you have multiple processors, doing the below could speed up downloading. Below uses four processors.
 ```
-UNIX> for i in `seq 0 6`; do python QC_bubble/image_data_export.py "$((i*100))" 100 &  done
+UNIX> for i in `seq 0 3`; do python QC_bubble/image_data_export.py "$((i*100))" 100 &  done
 ```
 #### Auxiliary - View the image and masks
 
@@ -85,7 +85,7 @@ We have `QC_bubble/bubble_detection` to perform object detection on a set of ima
 
 - `--output_dir` - A string specifying the name of the directory to store the statistical information of each image
 - `--model` - A string specifying the name of the model
-- `--data_set` - A string specifying the name of the dataset directory
+- `--dataset` - A string specifying the name of the dataset directory
 - `--starting` - An integer specifying at which image to be processed
 - `--num_images` - An integer specifying the number of images to be processed starting at `starting`.
 
@@ -160,7 +160,8 @@ UNIX> python QC_bubble/bubble_detection.py --model model.h5 --output_dir out5 --
 UNIX> python QC_bubble/bubble_detection.py --model model.h5 --output_dir out6 --dataset image_examples --rescale_list 512 1024 1536 2048 2560 3072
 
 ```
-The below images show the results going from one rescale to six rescales. The left image significantly indicates the importance of rescaling methods.
+The below images show the results going from one rescaling to six times rescaling (top to bottom). The left image significantly indicates the importance of rescaling methods.
+
 ![](./doc_images/rescale.png)
 
 
@@ -188,7 +189,7 @@ Finally, we have `QC_bubble/post_processing.py` to remove the false positive. Yo
 `use_remove` - A string that is either `"T"` or `"F"`. `"T"` is to load the change you saved last time.
 
 ```
-UNIX> python QC_bubble/post_processing.py out1/checkpoint-3/ F
+UNIX> python QC_bubble/post_processing.py out1/checkpoint-1/ F
 Processing out1/checkpoint-1/
 ```
 
