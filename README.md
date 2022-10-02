@@ -85,7 +85,7 @@ We have `QC_bubble/bubble_detection` to perform object detection on a set of ima
 
 - `--output_dir` - A string specifying the name of the directory to store the statistical information of each image
 - `--model` - A string specifying the name of the model
-- `--data_set` - A string specifying the name of the dataset directory
+- `--dataset` - A string specifying the name of the dataset directory
 - `--starting` - An integer specifying at which image to be processed
 - `--num_images` - An integer specifying the number of images to be processed starting at `starting`.
 
