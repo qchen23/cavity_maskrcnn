@@ -182,3 +182,12 @@ Processing out1/checkpoint-1/
 ## Utility file - `QC_bubble/utils.py`
 
 `QC_bubble/utils.py` implements several essential functions that can be used across many other `.py` files, such as calculating intersection over union (IoU), converting a boolean mask matrix to a list of positions, etc.
+
+
+
+## Contacts
+If you have any questions and suggestions, please contact
+- `qchen23@vols.utk.edu`
+- `czheng4@vols.utk.edu`
+
+
