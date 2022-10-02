@@ -19,7 +19,7 @@ UNIX> python setup.py install
 ```
 
 
-## Cavities/bubble detection
+## Cavity/bubble detection
 
 ### Step 1 - Obtain the dataset
 
