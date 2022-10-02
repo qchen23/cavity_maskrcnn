@@ -26,29 +26,11 @@ UNIX> python setup.py install
 Generally, the object masks are represented using a set of the boolean matrix. However, this storing method can take huge disk space when the image is large and has many objects. Therefore, our approach stores the mask as a list of positions in the image.
 
 
-We use the `Labelbox` to annotate all the masks. Below is how you can download our dataset. `QC_bubble/image_data_export.py` program takes two arguments. 
-- `starting_id` - An integer number specifying at which image to start to download. 
-- `num_images` - An integer number specifying the number of images to download. 
-
-Note: We have uploaded 370 images in the Labelbox, of which 228 are annotated, and the rest are discarded. So our total dataset size is 228. Unfortunately, downloading the images could take a while.
 ```
-UNIX> python QC_bubble/image_data_export.py
-usage: python QC_bubble/image_data_export.py starting_image num_images
-UNIX> python QC_bubble/image_data_export.py 0 100000
-The number of images 370
-Generate image 1
-Generate image 2
-Generate image 3
-Generate image 4
+UNIX> unzip bubble_dataset.zip
 ...
 ```
 
-
-
-If you have multiple processors, doing the below could speed up downloading. Below uses four processors.
-```
-UNIX> for i in `seq 0 3`; do python QC_bubble/image_data_export.py "$((i*100))" 100 &  done
-```
 #### Auxiliary - View the image and masks
 
 We have `QC_bubble/read_mask.py` to help you view image with masks. It takes the image file followed by an annotation file you obtained from step 1.
