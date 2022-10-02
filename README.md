@@ -189,7 +189,7 @@ Finally, we have `QC_bubble/post_processing.py` to remove the false positive. Yo
 `use_remove` - A string that is either `"T"` or `"F"`. `"T"` is to load the change you saved last time.
 
 ```
-UNIX> python QC_bubble/post_processing.py out1/checkpoint-3/ F
+UNIX> python QC_bubble/post_processing.py out1/checkpoint-1/ F
 Processing out1/checkpoint-1/
 ```
 
