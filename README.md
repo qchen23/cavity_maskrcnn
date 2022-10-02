@@ -30,7 +30,7 @@ We use the `Labelbox` to annotate all the masks. Below is how you can download o
 - `starting_id` - An integer number specifying at which image to start to download. 
 - `num_images` - An integer number specifying the number of images to download. 
 
-Note: We have 685 images in the Labelbox, of which 228 are annotated, and the rest are discarded. So our total dataset size is 228. Unfortunately, downloading the images could take a while.
+Note: We have uploaded 370 images in the Labelbox, of which 228 are annotated, and the rest are discarded. So our total dataset size is 228. Unfortunately, downloading the images could take a while.
 ```
 UNIX> python QC_bubble/image_data_export.py
 usage: python QC_bubble/image_data_export.py starting_image num_images
