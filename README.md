@@ -3,7 +3,7 @@
 
 
 ## Overview
-This framework utilizes the Mask R-CNN to train a model and OpenCV to extract the statistical information from object masks. We have explored this decent framework with the cavity/bubble dataset. It also provides the post-processing component to help you remove unwanted objects. We will explain each module with the cavities dataset in detail below. You can find Mask R-CNN repo [here](https://github.com/matterport/Mask_RCNN).
+This framework utilizes the Mask R-CNN to train a model and OpenCV to extract the statistical information from object masks. We have explored this decent framework with the cavity/bubble dataset. It also provides the post-processing component to help you remove unwanted objects. We will explain each module with the cavity dataset in detail below. You can find Mask R-CNN repo [here](https://github.com/matterport/Mask_RCNN).
 
 
 ## Software Requirement
