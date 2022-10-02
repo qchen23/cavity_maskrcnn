@@ -160,7 +160,7 @@ UNIX> python QC_bubble/bubble_detection.py --model model.h5 --output_dir out5 --
 UNIX> python QC_bubble/bubble_detection.py --model model.h5 --output_dir out6 --dataset image_examples --rescale_list 512 1024 1536 2048 2560 3072
 
 ```
-The below images show the results going from one rescale to six rescales. The left image significantly indicates the importance of rescaling methods.
+The below images show the results going from one rescaling to six times rescaling (top to bottom). The left image significantly indicates the importance of rescaling methods.
 
 ![](./doc_images/rescale.png)
 
