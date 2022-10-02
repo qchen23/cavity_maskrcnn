@@ -8,7 +8,7 @@ This framework utilizes the Mask R-CNN to train a model and OpenCV to extract th
 
 ## Software Requirement
 
-- We use python 3.6. We have not tested this in other versions.
+- We use python 3.6. We have not tested this framework in other Python versions.
 - There's a `requirement.txt` that includes all the packages needed to run our codes
 ```
 UNIX> pip install -r requirements.txt 
