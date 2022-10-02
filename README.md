@@ -26,7 +26,10 @@ UNIX> python setup.py install
 Generally, the object masks are represented using a set of the boolean matrix. However, this storing method can take huge disk space when the image is large and has many objects. Therefore, our approach stores the mask as a list of positions in the image.
 
 
+You may need to have `git lfs` install to download the models and datasets.
+
 ```
+UNIX> git clone https://github.com/qchen23/cavity_maskrcnn.git
 UNIX> unzip bubble_dataset.zip
 ...
 ```
