@@ -35,7 +35,7 @@ Note: We have uploaded 370 images in the Labelbox, of which 228 are annotated, a
 UNIX> python QC_bubble/image_data_export.py
 usage: python QC_bubble/image_data_export.py starting_image num_images
 UNIX> python QC_bubble/image_data_export.py 0 100000
-The number of images 685
+The number of images 370
 Generate image 1
 Generate image 2
 Generate image 3
