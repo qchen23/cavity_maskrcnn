@@ -45,9 +45,9 @@ Generate image 4
 
 
 
-If you have multiple processors, doing the below could speed up downloading. Below uses seven processors.
+If you have multiple processors, doing the below could speed up downloading. Below uses four processors.
 ```
-UNIX> for i in `seq 0 6`; do python QC_bubble/image_data_export.py "$((i*100))" 100 &  done
+UNIX> for i in `seq 0 3`; do python QC_bubble/image_data_export.py "$((i*100))" 100 &  done
 ```
 #### Auxiliary - View the image and masks
 
