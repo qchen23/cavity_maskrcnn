@@ -121,7 +121,7 @@ while True:
 with open(checkpoint_dir + '/remove.txt','w') as f:
    f.write(str(removed_masks))  
 
-num = output_stat(checkpoint_dir, original_image, binary_masks, removed_masks, cv2_draw_type = "ellipse")
+num = output_stat(checkpoint_dir, original_image, binary_masks, removed_masks)
 # r = output_stat(checkpoint_dir + "/cnn_human_stat_rect.csv", original_image, binary_masks, removed_masks, cv2_draw_type = "rect")
 print("  -- Bubbles: {}".format(num))
 cv2.imwrite(checkpoint_dir + "/cnn_human_maks_image.png", img)
