@@ -34,6 +34,7 @@ UNIX> unzip bubble_dataset.zip
 ...
 ```
 
+
 #### Auxiliary - View the image and masks
 
 We have `QC_bubble/read_mask.py` to help you view image with masks. It takes the image file followed by an annotation file you obtained from step 1.
