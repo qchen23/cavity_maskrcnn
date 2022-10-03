@@ -36,7 +36,7 @@ You can download the dataset [here](https://drive.google.com/file/d/1FQK7FkAX9aC
 
 
 ```
-UNIX> mv your_downloaded_zip_file .
+UNIX> mv your_downloaded_file .
 UNIX> unzip bubble_dataset.zip
 ```
 
@@ -44,10 +44,17 @@ UNIX> unzip bubble_dataset.zip
 
 Download cavity model [here](https://drive.google.com/file/d/1_-XggBlnyNoxCXcXCiHhd3ZePNaS01r2/view?usp=sharing)
 
+```
+UNIX> mv your_downloaded_file .
+```
 
 #### Obtain Mask-RCNN coco model (optional)
 
 We train the cavity model on top of the Mask-RCNN coco model. So, if you want to train your own model, you can download the Mask-RCNN coco model [here](https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_coco.h5)
+
+```
+UNIX> mv your_downloaded_file .
+```
 
 
 
