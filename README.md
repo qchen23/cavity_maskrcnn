@@ -21,18 +21,38 @@ UNIX> python setup.py install
 
 ## Cavity/bubble detection
 
-### Step 1 - Obtain the dataset
+### Step 1 - Preparations
+
+#### Clone the repo
+
+```
+UNIX>  git clone https://github.com/qchen23/cavity_maskrcnn.git
+```
+
+#### Obtain the dataset
 
 Generally, the object masks are represented using a set of the boolean matrix. However, this storing method can take huge disk space when the image is large and has many objects. Therefore, our approach stores the mask as a list of positions in the image.
+You can download the dataset [here](https://drive.google.com/file/d/1FQK7FkAX9aCtujYKbzYDENkGiB3eXgaB/view?usp=sharing)
 
-
-You may need to have `git lfs` installed to download the model and dataset.
 
 ```
-UNIX> git clone https://github.com/qchen23/cavity_maskrcnn.git
+UNIX> mv your_downloaded_zip_file .
 UNIX> unzip bubble_dataset.zip
-...
 ```
+
+#### Obtain the trained cavity model
+
+Download cavity model [here](https://drive.google.com/file/d/1_-XggBlnyNoxCXcXCiHhd3ZePNaS01r2/view?usp=sharing)
+
+
+#### Obtain Mask-RCNN coco model (optional)
+
+We train the cavity model on top of the Mask-RCNN coco model. So, if you want to train your own model, you can download the Mask-RCNN coco model [here](https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_coco.h5)
+
+
+
+
+
 
 
 #### Auxiliary - View the image and masks
