@@ -1,5 +1,7 @@
 # A deep learning model for automatic analysis of cavities in irradiated materials
+## Paper Citation:
 
+Chen, Qinyun, et al. "[A deep learning model for automatic analysis of cavities in irradiated materials.](https://www.sciencedirect.com/science/article/pii/S0927025623000678?dgcid=author)" Computational Materials Science 221 (2023): 112073. 
 
 
 ## Overview
