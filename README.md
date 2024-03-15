@@ -34,7 +34,7 @@ UNIX>  git clone https://github.com/qchen23/cavity_maskrcnn.git
 #### Obtain the dataset
 
 Generally, the object masks are represented using a set of the boolean matrix. However, this storing method can take huge disk space when the image is large and has many objects. Therefore, our approach stores the mask as a list of positions in the image.
-You can download the dataset [here](https://drive.google.com/file/d/1FQK7FkAX9aCtujYKbzYDENkGiB3eXgaB/view?usp=sharing)
+You can download the dataset [here](https://drive.google.com/file/d/1YV1xu1C6ucuHqu8H3kmRDj5-JDMZ9c-5/view?usp=sharing)
 
 
 ```
@@ -44,7 +44,7 @@ UNIX> unzip bubble_dataset.zip
 
 #### Obtain the trained cavity model
 
-Download cavity model [here](https://drive.google.com/file/d/1_-XggBlnyNoxCXcXCiHhd3ZePNaS01r2/view?usp=sharing)
+Download cavity model [here](https://drive.google.com/file/d/1yMRSTdCpQviqf1AG9B0S8-FuOJYBJoRJ/view?usp=sharing)
 
 ```
 UNIX> mv your_downloaded_file .
