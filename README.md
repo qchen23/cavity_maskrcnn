@@ -216,7 +216,6 @@ Processing out1/checkpoint-1/
 
 ## Contacts
 If you have any questions and suggestions, please contact
-- `qchen23@vols.utk.edu`
-- `czheng4@vols.utk.edu`
+- `a191618755@gmail.com`
 
 
